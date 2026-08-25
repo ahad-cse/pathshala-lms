@@ -10,7 +10,9 @@ import { BlogPost, Course } from '@/types/content';
 export default function HomePage() {
   const { user, role } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [visibleCourseCount, setVisibleCourseCount] = useState(6);
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+  const [visiblePostCount, setVisiblePostCount] = useState(6);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const roleDashboardLabel = role === 'admin'
@@ -37,7 +39,7 @@ export default function HomePage() {
           courseApi.getAll(),
         ]);
         if (postsRes.status === 'fulfilled') {
-          setLatestPosts(postsRes.value.data?.slice(0, 3) || []);
+          setLatestPosts(postsRes.value.data || []);
         }
         if (coursesRes.status === 'fulfilled') {
           setCourses(coursesRes.value.data || []);
@@ -115,40 +117,63 @@ export default function HomePage() {
 
         {/* Right Side: Blog Link + Auth Actions (with generous subtle gap) */}
         <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          {/* Sleek Bordered Blog Button with Icon */}
+          {/* High-End Interactive Blog Navigation Capsule */}
           <Link
             href="/blog"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '7px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: 'var(--ink)',
+              gap: '8px',
+              padding: '5px 14px 5px 6px',
+              borderRadius: '99px',
               backgroundColor: 'var(--canvas)',
               border: '1px solid var(--border)',
-              padding: '7px 14px',
-              borderRadius: '8px',
               textDecoration: 'none',
               transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = 'var(--primary)';
-              e.currentTarget.style.color = 'var(--primary)';
               e.currentTarget.style.backgroundColor = 'var(--surface)';
+              e.currentTarget.style.boxShadow = '0 3px 10px rgba(242, 102, 42, 0.12)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--ink)';
               e.currentTarget.style.backgroundColor = 'var(--canvas)';
+              e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
             }}
+            title="Explore Technical Publications & Engineering Guides"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-              <path d="M6 6h10" />
-              <path d="M6 10h10" />
+            {/* Micro Icon Badge */}
+            <div
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--primary-soft)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                <path d="M6 6h10" />
+                <path d="M6 10h10" />
+              </svg>
+            </div>
+
+            {/* Label */}
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+              Blog
+            </span>
+
+            {/* Subtle Right Indicator */}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--ink-faint)', marginLeft: '1px' }}>
+              <polyline points="9 18 15 12 9 6" />
             </svg>
-            <span>Blog</span>
           </Link>
 
           {user ? (
@@ -464,15 +489,14 @@ export default function HomePage() {
 
         <p
           style={{
-            fontSize: '16px',
-            lineHeight: 1.6,
+            fontSize: '16.5px',
+            lineHeight: 1.65,
             color: 'var(--ink-soft)',
-            maxWidth: '640px',
+            maxWidth: '680px',
             margin: '0 auto 32px',
           }}
         >
-          PathShala provides sequential lessons, server-side auto-graded quizzes, and role-based
-          access controls for students, instructors, content managers, and administrators.
+          Empower your journey from curious learner to skilled builder. Master in-demand skills step-by-step, track your real-time growth, and turn your potential into tangible achievements.
         </p>
 
         <div className="hero-cta-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
@@ -688,7 +712,7 @@ export default function HomePage() {
               gap: '20px',
             }}
           >
-            {courses.map((course) => {
+            {courses.slice(0, visibleCourseCount).map((course) => {
               const lessonCount = course.lessons?.length || 0;
               return (
                 <div
@@ -849,6 +873,42 @@ export default function HomePage() {
               );
             })}
           </div>
+
+          {courses.length > visibleCourseCount && (
+            <div style={{ textAlign: 'center', marginTop: '36px' }}>
+              <button
+                onClick={() => setVisibleCourseCount((prev) => prev + 6)}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: '99px',
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--ink)',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(242, 102, 42, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--ink)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                }}
+              >
+                <span>Load More Courses</span>
+                <span>↓</span>
+              </button>
+            </div>
+          )}
         </section>
       )}
 
@@ -895,7 +955,7 @@ export default function HomePage() {
               gap: '20px',
             }}
           >
-            {latestPosts.map((post) => (
+            {latestPosts.slice(0, visiblePostCount).map((post) => (
               <div
                 key={post.id}
                 style={{
@@ -955,6 +1015,42 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          {latestPosts.length > visiblePostCount && (
+            <div style={{ textAlign: 'center', marginTop: '36px' }}>
+              <button
+                onClick={() => setVisiblePostCount((prev) => prev + 6)}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: '99px',
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--ink)',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(242, 102, 42, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--ink)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                }}
+              >
+                <span>Load More Articles</span>
+                <span>↓</span>
+              </button>
+            </div>
+          )}
         </section>
       )}
 

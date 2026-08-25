@@ -38,6 +38,15 @@ export default {
         'api::enrollment.enrollment.delete',
       ];
 
+      const progressActions = [
+        'api::progress.progress.find',
+        'api::progress.progress.findOne',
+        'api::progress.progress.create',
+        'api::progress.progress.delete',
+        'api::progress.progress.toggleLesson',
+        'api::progress.progress.getCourseProgress',
+      ];
+
       const authTestActions = [
         'api::auth-test.auth-test.adminOnly',
         'api::auth-test.auth-test.contentManagerOnly',
@@ -58,6 +67,7 @@ export default {
           ...courseActions,
           ...lessonActions,
           ...enrollmentActions,
+          ...progressActions,
         ];
 
         for (const action of allAuthActions) {

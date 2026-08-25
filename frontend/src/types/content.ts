@@ -36,6 +36,14 @@ export interface Enrollment {
   updatedAt?: string;
 }
 
+export interface CourseProgress {
+  courseId: string;
+  totalLessons: number;
+  completedLessons: number;
+  percentage: number;
+  completedLessonIds: string[];
+}
+
 export interface CourseFormData {
   title: string;
   description: string;

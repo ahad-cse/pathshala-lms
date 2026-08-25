@@ -4,36 +4,58 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
-import { enrollmentApi } from '@/lib/api';
-import { Enrollment } from '@/types/content';
+import { enrollmentApi, progressApi } from '@/lib/api';
+import { CourseProgress, Enrollment } from '@/types/content';
 import Link from 'next/link';
 
 export default function MyCoursesPage() {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<string, CourseProgress>>({});
   const [loading, setLoading] = useState(true);
 
-  const loadEnrollments = useCallback(async () => {
+  const loadEnrollmentsAndProgress = useCallback(async () => {
     try {
       setLoading(true);
       const res = await enrollmentApi.getMyEnrollments();
-      setEnrollments(res?.data || []);
+      const enrollmentList = res?.data || [];
+      setEnrollments(enrollmentList);
+
+      // Fetch progress for each course
+      const progressPromises = enrollmentList.map(async (e: Enrollment) => {
+        if (!e.course?.documentId) return null;
+        try {
+          const pRes = await progressApi.getCourseProgress(e.course.documentId);
+          return { courseId: e.course.documentId, data: pRes.data };
+        } catch {
+          return null;
+        }
+      });
+
+      const progressResults = await Promise.all(progressPromises);
+      const newProgressMap: Record<string, CourseProgress> = {};
+      progressResults.forEach((r) => {
+        if (r && r.courseId) {
+          newProgressMap[r.courseId] = r.data;
+        }
+      });
+      setProgressMap(newProgressMap);
     } catch (err) {
-      console.error('Failed to load my enrollments:', err);
+      console.error('Failed to load my enrollments and progress:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadEnrollments();
-  }, [loadEnrollments]);
+    loadEnrollmentsAndProgress();
+  }, [loadEnrollmentsAndProgress]);
 
   return (
     <ProtectedRoute allowedRoles={['student', 'admin']}>
       <AppShell
-        title="My Enrolled Courses"
-        subtitle={`Learning tracks and enrolled curriculum for ${user?.username || 'Student'}`}
+        title="My Enrolled Courses & Progress"
+        subtitle={`Learning tracks and live completion status for ${user?.username || 'Student'}`}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Header Banner */}
@@ -78,13 +100,13 @@ export default function MyCoursesPage() {
                 }}
               >
                 <span>🎓</span>
-                <span>Active Enrollments</span>
+                <span>Active Learning Tracks</span>
               </div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>
                 Enrolled Courses ({enrollments.length})
               </h2>
               <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
-                Pick up where you left off, stream video lessons, and complete practice quizzes.
+                Pick up where you left off, stream lessons, track completion %, and earn credentials.
               </p>
             </div>
 
@@ -111,7 +133,7 @@ export default function MyCoursesPage() {
           {/* Enrolled Courses Grid */}
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
-              Loading your learning tracks...
+              Loading your courses and progress records...
             </div>
           ) : enrollments.length === 0 ? (
             <div
@@ -128,7 +150,7 @@ export default function MyCoursesPage() {
                 You haven't enrolled in any courses yet
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--ink-soft)', maxWidth: '440px', margin: '0 auto 20px' }}>
-                Explore the course catalog and enroll in web development and computer science tracks.
+                Explore the course catalog and enroll in modern web development tracks.
               </p>
               <Link
                 href="/courses"
@@ -158,6 +180,10 @@ export default function MyCoursesPage() {
                 const sortedLessons = (course.lessons || []).sort((a, b) => (a.order || 0) - (b.order || 0));
                 const lessonsCount = sortedLessons.length;
                 const firstLesson = sortedLessons[0];
+                const courseProgress = progressMap[course.documentId];
+                const percentage = courseProgress?.percentage || 0;
+                const completedCount = courseProgress?.completedLessons || 0;
+
                 const targetUrl = firstLesson
                   ? `/courses/${course.documentId}/lessons/${firstLesson.documentId}`
                   : `/courses`;
@@ -213,6 +239,40 @@ export default function MyCoursesPage() {
                         {course.description}
                       </p>
 
+                      {/* Progress Bar Component */}
+                      <div
+                        style={{
+                          backgroundColor: 'var(--canvas)',
+                          borderRadius: '10px',
+                          padding: '12px 14px',
+                          marginBottom: '16px',
+                          border: '1px solid var(--border-soft)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink)' }}>
+                            Track Progress
+                          </span>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: percentage === 100 ? 'var(--success)' : 'var(--primary)' }}>
+                            {percentage}%
+                          </span>
+                        </div>
+                        <div style={{ height: '6px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
+                          <div
+                            style={{
+                              height: '100%',
+                              width: `${percentage}%`,
+                              backgroundColor: percentage === 100 ? 'var(--success)' : 'var(--primary)',
+                              borderRadius: '99px',
+                              transition: 'width 0.3s ease',
+                            }}
+                          />
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--ink-faint)', marginTop: '6px' }}>
+                          {completedCount} of {lessonsCount} lessons completed
+                        </div>
+                      </div>
+
                       <div
                         style={{
                           display: 'flex',
@@ -229,7 +289,7 @@ export default function MyCoursesPage() {
                         <span style={{ fontWeight: 600 }}>{lessonsCount} {lessonsCount === 1 ? 'Lesson' : 'Lessons'}</span>
                       </div>
 
-                      {/* Continue Learning Action Button */}
+                      {/* Action Button */}
                       <Link
                         href={targetUrl}
                         style={{
@@ -239,15 +299,16 @@ export default function MyCoursesPage() {
                           gap: '8px',
                           padding: '11px',
                           borderRadius: '8px',
-                          backgroundColor: 'var(--primary)',
-                          color: '#FFFFFF',
+                          backgroundColor: percentage === 100 ? 'var(--surface)' : 'var(--primary)',
+                          color: percentage === 100 ? 'var(--ink)' : '#FFFFFF',
+                          border: percentage === 100 ? '1px solid var(--border)' : 'none',
                           fontWeight: 700,
                           fontSize: '13.5px',
                           textDecoration: 'none',
-                          boxShadow: '0 2px 6px rgba(242, 102, 42, 0.3)',
+                          boxShadow: percentage === 100 ? 'none' : '0 2px 6px rgba(242, 102, 42, 0.3)',
                         }}
                       >
-                        <span>▶ Start / Continue Learning</span>
+                        <span>{percentage === 100 ? '✓ Review Course Content' : percentage > 0 ? '▶ Continue Learning' : '▶ Start Learning'}</span>
                       </Link>
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
-import { Course, CourseFormData, Enrollment, Lesson, LessonFormData } from '@/types/content';
+import { Course, CourseFormData, CourseProgress, Enrollment, Lesson, LessonFormData } from '@/types/content';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
@@ -206,6 +206,39 @@ export const enrollmentApi = {
           course: courseDocumentId,
         },
       }),
+    });
+  },
+};
+
+/**
+ * Progress Tracking API Service
+ */
+export const progressApi = {
+  async toggleLesson(lessonId: string, courseId: string): Promise<{
+    data: {
+      lessonId: string;
+      isCompleted: boolean;
+      courseId: string;
+      totalLessons: number;
+      completedLessons: number;
+      percentage: number;
+      completedLessonIds: string[];
+    };
+  }> {
+    return apiFetch('/api/progress/toggle', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          lessonId,
+          courseId,
+        },
+      }),
+    });
+  },
+
+  async getCourseProgress(courseId: string): Promise<{ data: CourseProgress }> {
+    return apiFetch<{ data: CourseProgress }>(`/api/progress/course/${courseId}`, {
+      method: 'GET',
     });
   },
 };

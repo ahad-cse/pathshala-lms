@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useCallback, use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi } from '@/lib/api';
-import { Course, Lesson } from '@/types/content';
+import { courseApi, lessonApi, progressApi } from '@/lib/api';
+import { Course, CourseProgress, Lesson } from '@/types/content';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -23,19 +23,31 @@ export default function LessonViewerPage({ params }: PageProps) {
 
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
+  const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [togglingProgress, setTogglingProgress] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const loadLessonData = useCallback(async () => {
     try {
       setLoading(true);
-      const [courseRes, lessonRes] = await Promise.all([
+      const [courseRes, lessonRes, progressRes] = await Promise.all([
         courseApi.getOne(courseId),
         lessonApi.getOne(lessonId),
+        progressApi.getCourseProgress(courseId).catch(() => ({
+          data: {
+            courseId,
+            totalLessons: 0,
+            completedLessons: 0,
+            percentage: 0,
+            completedLessonIds: [],
+          },
+        })),
       ]);
 
       setCourse(courseRes.data);
       setCurrentLesson(lessonRes.data);
+      setProgress(progressRes.data);
     } catch (err) {
       console.error('Failed to load lesson data:', err);
     } finally {
@@ -52,6 +64,27 @@ export default function LessonViewerPage({ params }: PageProps) {
   const currentIndex = sortedLessons.findIndex((l) => l.documentId === lessonId);
   const prevLesson = currentIndex > 0 ? sortedLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex >= 0 && currentIndex < sortedLessons.length - 1 ? sortedLessons[currentIndex + 1] : null;
+
+  const isCurrentLessonCompleted = progress?.completedLessonIds?.includes(lessonId) ?? false;
+
+  const handleToggleComplete = async () => {
+    if (togglingProgress) return;
+    setTogglingProgress(true);
+    try {
+      const res = await progressApi.toggleLesson(lessonId, courseId);
+      setProgress({
+        courseId,
+        totalLessons: res.data.totalLessons,
+        completedLessons: res.data.completedLessons,
+        percentage: res.data.percentage,
+        completedLessonIds: res.data.completedLessonIds,
+      });
+    } catch (err: any) {
+      alert(err?.message || 'Failed to update lesson progress.');
+    } finally {
+      setTogglingProgress(false);
+    }
+  };
 
   // Convert YouTube URL to embed URL
   const getEmbedUrl = (url?: string) => {
@@ -93,7 +126,7 @@ export default function LessonViewerPage({ params }: PageProps) {
             flexShrink: 0,
           }}
         >
-          {/* Header */}
+          {/* Header & Course Progress Summary */}
           <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border-soft)' }}>
             <Link
               href="/my-courses"
@@ -115,14 +148,33 @@ export default function LessonViewerPage({ params }: PageProps) {
                 fontSize: '15px',
                 fontWeight: 800,
                 color: 'var(--ink)',
-                margin: 0,
+                margin: '0 0 6px',
                 lineHeight: 1.3,
               }}
             >
               {course?.title || 'Course Curriculum'}
             </h2>
-            <div style={{ fontSize: '12px', color: 'var(--ink-faint)', marginTop: '4px' }}>
-              {sortedLessons.length} {sortedLessons.length === 1 ? 'Lesson' : 'Lessons'} • Sequential Track
+
+            {/* Progress Bar in Sidebar */}
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '4px' }}>
+                <span>Course Progress</span>
+                <span style={{ color: 'var(--primary)' }}>{progress?.percentage || 0}%</span>
+              </div>
+              <div style={{ height: '6px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${progress?.percentage || 0}%`,
+                    backgroundColor: 'var(--primary)',
+                    borderRadius: '99px',
+                    transition: 'width 0.3s ease',
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--ink-faint)', marginTop: '4px' }}>
+                {progress?.completedLessons || 0} of {sortedLessons.length} lessons completed
+              </div>
             </div>
           </div>
 
@@ -131,6 +183,7 @@ export default function LessonViewerPage({ params }: PageProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {sortedLessons.map((lesson, idx) => {
                 const isActive = lesson.documentId === lessonId;
+                const isCompleted = progress?.completedLessonIds?.includes(lesson.documentId);
 
                 return (
                   <Link
@@ -154,13 +207,18 @@ export default function LessonViewerPage({ params }: PageProps) {
                       if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
                     }}
                   >
+                    {/* Completion indicator / Order number */}
                     <span
                       style={{
                         width: '24px',
                         height: '24px',
                         borderRadius: '6px',
-                        backgroundColor: isActive ? 'var(--role-student)' : 'var(--border-soft)',
-                        color: isActive ? '#FFFFFF' : 'var(--ink)',
+                        backgroundColor: isCompleted
+                          ? 'var(--success)'
+                          : isActive
+                          ? 'var(--role-student)'
+                          : 'var(--border-soft)',
+                        color: isCompleted || isActive ? '#FFFFFF' : 'var(--ink)',
                         fontSize: '11px',
                         fontWeight: 800,
                         display: 'flex',
@@ -169,7 +227,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                         flexShrink: 0,
                       }}
                     >
-                      {lesson.order || idx + 1}
+                      {isCompleted ? '✓' : lesson.order || idx + 1}
                     </span>
 
                     <div style={{ minWidth: 0, flex: 1 }}>
@@ -246,7 +304,27 @@ export default function LessonViewerPage({ params }: PageProps) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Live Completion Pill */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 14px',
+                  borderRadius: '99px',
+                  backgroundColor: 'var(--canvas)',
+                  border: '1px solid var(--border)',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                }}
+              >
+                <span style={{ color: 'var(--primary)' }}>⚡ {progress?.percentage || 0}% Done</span>
+                <span style={{ color: 'var(--ink-faint)' }}>•</span>
+                <span style={{ color: 'var(--ink-soft)' }}>{progress?.completedLessons || 0}/{sortedLessons.length}</span>
+              </div>
+
               <Link
                 href="/dashboard"
                 style={{
@@ -279,37 +357,63 @@ export default function LessonViewerPage({ params }: PageProps) {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                {/* Lesson Header */}
-                <div>
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                      backgroundColor: 'var(--primary-soft)',
-                      color: 'var(--primary)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    Lesson {currentLesson.order || currentIndex + 1}
+                {/* Lesson Header & Mark Complete Action */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                  <div>
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: 'var(--primary-soft)',
+                        color: 'var(--primary)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Lesson {currentLesson.order || currentIndex + 1}
+                    </div>
+
+                    <h1
+                      style={{
+                        fontSize: '26px',
+                        fontWeight: 800,
+                        color: 'var(--ink)',
+                        margin: '0 0 6px',
+                        fontFamily: 'var(--font-display)',
+                      }}
+                    >
+                      {currentLesson.title}
+                    </h1>
                   </div>
 
-                  <h1
+                  {/* Mark Complete / Completed Button */}
+                  <button
+                    onClick={handleToggleComplete}
+                    disabled={togglingProgress}
                     style={{
-                      fontSize: '26px',
-                      fontWeight: 800,
-                      color: 'var(--ink)',
-                      margin: '0 0 6px',
-                      fontFamily: 'var(--font-display)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 20px',
+                      borderRadius: '10px',
+                      backgroundColor: isCurrentLessonCompleted ? 'var(--success-soft)' : 'var(--primary)',
+                      color: isCurrentLessonCompleted ? 'var(--success)' : '#FFFFFF',
+                      border: isCurrentLessonCompleted ? '1.5px solid var(--success)' : 'none',
+                      fontSize: '13.5px',
+                      fontWeight: 700,
+                      cursor: togglingProgress ? 'not-allowed' : 'pointer',
+                      opacity: togglingProgress ? 0.7 : 1,
+                      boxShadow: isCurrentLessonCompleted ? 'none' : '0 2px 8px rgba(242, 102, 42, 0.3)',
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    {currentLesson.title}
-                  </h1>
+                    <span>{isCurrentLessonCompleted ? '✓ Completed' : 'Mark as Complete'}</span>
+                  </button>
                 </div>
 
                 {/* Video Player */}
@@ -435,7 +539,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                         textDecoration: 'none',
                       }}
                     >
-                      <span>✓ Course Completed • Back to My Courses</span>
+                      <span>✓ Track Finished • Return to My Courses</span>
                     </Link>
                   )}
                 </div>

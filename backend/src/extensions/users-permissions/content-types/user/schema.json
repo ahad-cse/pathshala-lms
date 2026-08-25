@@ -2,7 +2,7 @@
   "collectionName": "up_users",
   "info": {
     "name": "user",
-    "description": "Extended user model with LMS role_type, courses, and enrollments",
+    "description": "Extended user model with LMS role_type, courses, enrollments, and progresses",
     "singularName": "user",
     "pluralName": "users",
     "displayName": "User"
@@ -86,6 +86,12 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::enrollment.enrollment",
+      "mappedBy": "student"
+    },
+    "progresses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::progress.progress",
       "mappedBy": "student"
     }
   }

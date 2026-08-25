@@ -1,4 +1,5 @@
 import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
+import { Course, CourseFormData, Lesson, LessonFormData } from '@/types/content';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
@@ -103,6 +104,80 @@ export const authApi = {
     return apiFetch<User>('/api/users/me', {
       method: 'GET',
       token,
+    });
+  },
+};
+
+/**
+ * User Management API Service
+ */
+export const userApi = {
+  async getAll(): Promise<User[]> {
+    return apiFetch<User[]>('/api/users', {
+      method: 'GET',
+    });
+  },
+};
+
+/**
+ * Course Management API Service
+ */
+export const courseApi = {
+  async getAll(params?: Record<string, any>): Promise<{ data: Course[]; meta?: any }> {
+    return apiFetch<{ data: Course[]; meta?: any }>('/api/courses', {
+      method: 'GET',
+      params,
+    });
+  },
+
+  async getOne(documentId: string): Promise<{ data: Course }> {
+    return apiFetch<{ data: Course }>(`/api/courses/${documentId}`, {
+      method: 'GET',
+    });
+  },
+
+  async create(data: CourseFormData): Promise<{ data: Course }> {
+    return apiFetch<{ data: Course }>('/api/courses', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async update(documentId: string, data: Partial<CourseFormData>): Promise<{ data: Course }> {
+    return apiFetch<{ data: Course }>(`/api/courses/${documentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async delete(documentId: string): Promise<void> {
+    return apiFetch<void>(`/api/courses/${documentId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+/**
+ * Lesson Management API Service
+ */
+export const lessonApi = {
+  async create(data: LessonFormData): Promise<{ data: Lesson }> {
+    return apiFetch<{ data: Lesson }>('/api/lessons', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async update(documentId: string, data: Partial<LessonFormData>): Promise<{ data: Lesson }> {
+    return apiFetch<{ data: Lesson }>(`/api/lessons/${documentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async delete(documentId: string): Promise<void> {
+    return apiFetch<void>(`/api/lessons/${documentId}`, {
+      method: 'DELETE',
     });
   },
 };

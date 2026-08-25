@@ -37,6 +37,7 @@ yarn-error.log*
 *.pem
 Thumbs.db
 
+# Documentation
 AGENTS.md
 PROJECT_PLAN.md
 docs/

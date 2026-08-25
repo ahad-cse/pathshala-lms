@@ -14,17 +14,44 @@ export default {
         .query('plugin::users-permissions.role')
         .findOne({ where: { type: 'public' } });
 
+      const courseActions = [
+        'api::course.course.find',
+        'api::course.course.findOne',
+        'api::course.course.create',
+        'api::course.course.update',
+        'api::course.course.delete',
+      ];
+
+      const lessonActions = [
+        'api::lesson.lesson.find',
+        'api::lesson.lesson.findOne',
+        'api::lesson.lesson.create',
+        'api::lesson.lesson.update',
+        'api::lesson.lesson.delete',
+      ];
+
+      const authTestActions = [
+        'api::auth-test.auth-test.adminOnly',
+        'api::auth-test.auth-test.contentManagerOnly',
+        'api::auth-test.auth-test.instructorOnly',
+        'api::auth-test.auth-test.studentOnly',
+      ];
+
+      const userActions = [
+        'plugin::users-permissions.user.me',
+        'plugin::users-permissions.user.find',
+        'plugin::users-permissions.user.findOne',
+      ];
+
       if (authenticatedRole) {
-        // Actions to enable for Authenticated role
-        const authActions = [
-          'plugin::users-permissions.user.me',
-          'api::auth-test.auth-test.adminOnly',
-          'api::auth-test.auth-test.contentManagerOnly',
-          'api::auth-test.auth-test.instructorOnly',
-          'api::auth-test.auth-test.studentOnly',
+        const allAuthActions = [
+          ...userActions,
+          ...authTestActions,
+          ...courseActions,
+          ...lessonActions,
         ];
 
-        for (const action of authActions) {
+        for (const action of allAuthActions) {
           const perm = await strapi.db
             .query('plugin::users-permissions.permission')
             .findOne({
@@ -46,10 +73,13 @@ export default {
       }
 
       if (publicRole) {
-        // Enable public auth callback and register permissions
         const publicActions = [
           'plugin::users-permissions.auth.callback',
           'plugin::users-permissions.auth.register',
+          'api::course.course.find',
+          'api::course.course.findOne',
+          'api::lesson.lesson.find',
+          'api::lesson.lesson.findOne',
         ];
 
         for (const action of publicActions) {
@@ -73,7 +103,7 @@ export default {
         }
       }
 
-      // Seed / ensure 4 test demo accounts
+      // Seed / ensure 5 test demo accounts
       if (authenticatedRole) {
         const demoUsers = [
           {
@@ -89,6 +119,11 @@ export default {
           {
             username: 'instructor',
             email: 'instructor@demo.com',
+            role_type: 'instructor',
+          },
+          {
+            username: 'instructor_b',
+            email: 'instructor_b@demo.com',
             role_type: 'instructor',
           },
           {
@@ -121,7 +156,6 @@ export default {
               `[SEED] Created demo user: ${demo.email} with role: ${demo.role_type}`
             );
           } else {
-            // Update password & role_type if needed
             await strapi.plugin('users-permissions').service('user').edit(existingUser.id, {
               password: defaultPassword,
               role_type: demo.role_type,
@@ -130,9 +164,123 @@ export default {
             });
           }
         }
+
+        // Seed Sample Courses & Lessons if none exist
+        const instructorA = await strapi.db
+          .query('plugin::users-permissions.user')
+          .findOne({ where: { email: 'instructor@demo.com' } });
+
+        const contentMgr = await strapi.db
+          .query('plugin::users-permissions.user')
+          .findOne({ where: { email: 'content@demo.com' } });
+
+        const existingCourse1 = await strapi.db
+          .query('api::course.course')
+          .findOne({ where: { title: 'Fullstack Next.js & TypeScript Masterclass' } });
+
+        if (!existingCourse1 && instructorA) {
+          const course1 = await strapi.documents('api::course.course').create({
+            data: {
+              title: 'Fullstack Next.js & TypeScript Masterclass',
+              description:
+                'Master modern full-stack development with Next.js 15 App Router, TypeScript, and Strapi CMS.',
+              category: 'Web Development',
+              cover_color: '#F2662A',
+              instructor: instructorA.id,
+            },
+          });
+
+          await strapi.documents('api::lesson.lesson').create({
+            data: {
+              title: 'Introduction to Next.js App Router',
+              content:
+                'In this lesson, we explore Next.js App Router architecture, Server Components, and client transitions.',
+              video_url: 'https://www.youtube.com/watch?v=wm5gMKuwSYk',
+              order: 1,
+              course: (course1 as any).documentId || course1.id,
+            },
+          });
+
+          await strapi.documents('api::lesson.lesson').create({
+            data: {
+              title: 'Building Type-safe APIs with Strapi',
+              content:
+                'Learn how to extend Strapi content-types, implement custom controllers, and enforce role-based security policies.',
+              video_url: 'https://www.youtube.com/watch?v=vc_0kWqP6O0',
+              order: 2,
+              course: (course1 as any).documentId || course1.id,
+            },
+          });
+
+          await strapi.documents('api::lesson.lesson').create({
+            data: {
+              title: 'State Management & Progress Persistence',
+              content:
+                'Deep dive into client-side state synchronization, optimistic UI updates, and backend percentage calculations.',
+              video_url: '',
+              order: 3,
+              course: (course1 as any).documentId || course1.id,
+            },
+          });
+
+          strapi.log.info('[SEED] Created Course 1 with 3 lessons for instructor@demo.com');
+        } else if (existingCourse1 && instructorA) {
+          // Link instructor if missing
+          await strapi.db.query('api::course.course').update({
+            where: { id: existingCourse1.id },
+            data: { instructor: instructorA.id },
+          });
+        }
+
+        const existingCourse2 = await strapi.db
+          .query('api::course.course')
+          .findOne({ where: { title: 'Data Structures & Algorithms in JavaScript' } });
+
+        if (!existingCourse2 && contentMgr) {
+          const course2 = await strapi.documents('api::course.course').create({
+            data: {
+              title: 'Data Structures & Algorithms in JavaScript',
+              description:
+                'Comprehensive foundations in computer science, algorithm complexity, graphs, and dynamic programming.',
+              category: 'Computer Science',
+              cover_color: '#4F46E5',
+              instructor: contentMgr.id,
+            },
+          });
+
+          await strapi.documents('api::lesson.lesson').create({
+            data: {
+              title: 'Big-O Notation & Time Complexity',
+              content:
+                'Understanding asymptotic analysis, best/worst/average case time and space complexity.',
+              video_url: 'https://www.youtube.com/watch?v=v4cd1O4zkGw',
+              order: 1,
+              course: (course2 as any).documentId || course2.id,
+            },
+          });
+
+          await strapi.documents('api::lesson.lesson').create({
+            data: {
+              title: 'Arrays, Stacks, and Queues',
+              content:
+                'Implementing core linear data structures from scratch with memory considerations.',
+              video_url: '',
+              order: 2,
+              course: (course2 as any).documentId || course2.id,
+            },
+          });
+
+          strapi.log.info('[SEED] Created Course 2 with 2 lessons for content@demo.com');
+        } else if (existingCourse2 && contentMgr) {
+          // Link instructor if missing
+          await strapi.db.query('api::course.course').update({
+            where: { id: existingCourse2.id },
+            data: { instructor: contentMgr.id },
+          });
+        }
       }
     } catch (err) {
-      strapi.log.error('[BOOTSTRAP] Error during role & user bootstrap:', err);
+      strapi.log.error('[BOOTSTRAP] Error during role, course & lesson bootstrap:', err);
     }
   },
 };

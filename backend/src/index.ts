@@ -71,6 +71,14 @@ export default {
         'api::admin-dashboard.admin-dashboard.deleteUser',
       ];
 
+      const blogPostActions = [
+        'api::blog-post.blog-post.find',
+        'api::blog-post.blog-post.findOne',
+        'api::blog-post.blog-post.create',
+        'api::blog-post.blog-post.update',
+        'api::blog-post.blog-post.delete',
+      ];
+
       const authTestActions = [
         'api::auth-test.auth-test.adminOnly',
         'api::auth-test.auth-test.contentManagerOnly',
@@ -95,6 +103,7 @@ export default {
           ...quizActions,
           ...quizSubmissionActions,
           ...adminDashboardActions,
+          ...blogPostActions,
         ];
 
         for (const action of allAuthActions) {
@@ -126,6 +135,8 @@ export default {
           'api::course.course.findOne',
           'api::lesson.lesson.find',
           'api::lesson.lesson.findOne',
+          'api::blog-post.blog-post.find',
+          'api::blog-post.blog-post.findOne',
         ];
 
         for (const action of publicActions) {
@@ -419,6 +430,71 @@ export default {
             });
 
             strapi.log.info('[SEED] Created Demo Quiz for Course 1');
+          }
+        }
+
+        // 6. Seed Demo Blog Posts (1 Published, 1 Draft)
+        const blogCount = await strapi.db.query('api::blog-post.blog-post').count();
+        if (blogCount === 0) {
+          const cmUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+            where: { email: 'content@demo.com' },
+          });
+
+          if (cmUser) {
+            // Published Article
+            await strapi.documents('api::blog-post.blog-post').create({
+              data: {
+                title: 'Building Scalable Full-Stack Web Applications with Next.js 15 & Strapi v5',
+                slug: 'building-scalable-full-stack-web-applications',
+                excerpt: 'A comprehensive architectural guide to modern headless LMS development with Next.js 15 App Router, TypeScript, and Strapi CMS.',
+                content: `## Modern Headless Architecture
+
+In modern web engineering, decoupling the presentation layer from backend content management provides unparalleled flexibility, rapid iteration velocity, and robust security boundaries.
+
+### Why Next.js 15 App Router?
+
+Next.js 15 brings React Server Components (RSC), Turbopack compilation speeds, and streaming server rendering directly to full-stack applications.
+
+- **Type Safety**: End-to-end typing across client components and server actions.
+- **Zero-Bundle Overhead**: Server components execute on the server and transmit zero JavaScript to the browser.
+- **Optimized Asset Delivery**: Built-in font, image, and script optimization engines.
+
+### Strapi v5 Headless Engine
+
+Strapi v5 introduces the Document Service API, fine-grained draft & publish management, and scalable SQL/SQLite database query abstractions.
+
+### Role-Based Access Control (RBAC)
+
+Security is never an afterthought. Enforcing role checks on the backend (using custom Strapi policies and scoped controllers) ensures that sensitive operations cannot be triggered by tampering with client-side UI elements.
+
+Happy Coding with PathShala LMS!`,
+                cover_image_url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
+                is_published: true,
+                published_date: new Date().toISOString(),
+                author: cmUser.documentId,
+              },
+            });
+
+            // Draft Article (For testing draft isolation)
+            await strapi.documents('api::blog-post.blog-post').create({
+              data: {
+                title: 'Draft: Advanced Microservices & Distributed System Architecture',
+                slug: 'draft-advanced-microservices-distributed-architecture',
+                excerpt: 'Unpublished internal draft exploring event-driven architectures, Kafka message brokers, and transactional outbox patterns.',
+                content: `## Internal Engineering Draft — DO NOT PUBLISH
+
+This document contains preliminary design benchmarks for distributed event streaming:
+
+1. **Transactional Outbox Pattern**: Prevent dual-write anomalies between PostgreSQL and Kafka.
+2. **Idempotent Consumers**: Deduplicate messages using unique Redis idempotency keys.
+3. **Circuit Breakers**: Implement resilient fallbacks during downstream microservice degradations.`,
+                cover_image_url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&auto=format&fit=crop&q=80',
+                is_published: false,
+                author: cmUser.documentId,
+              },
+            });
+
+            strapi.log.info('[SEED] Created 2 Demo Blog Posts (1 Published, 1 Draft)');
           }
         }
       }

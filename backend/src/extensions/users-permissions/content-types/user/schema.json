@@ -2,7 +2,7 @@
   "collectionName": "up_users",
   "info": {
     "name": "user",
-    "description": "Extended user model with LMS role_type, courses, enrollments, progresses, and quiz_submissions",
+    "description": "Extended user model with LMS role_type, courses, enrollments, progresses, quiz_submissions, and blog_posts",
     "singularName": "user",
     "pluralName": "users",
     "displayName": "User"
@@ -99,6 +99,12 @@
       "relation": "oneToMany",
       "target": "api::quiz-submission.quiz-submission",
       "mappedBy": "student"
+    },
+    "blog_posts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::blog-post.blog-post",
+      "mappedBy": "author"
     }
   }
 }

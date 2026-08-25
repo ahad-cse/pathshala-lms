@@ -1,12 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth, ROLE_DETAILS } from '@/context/AuthContext';
 import { RoleType } from '@/types/auth';
+import { blogApi } from '@/lib/api';
+import { BlogPost } from '@/types/content';
 
 export default function HomePage() {
   const { user, role } = useAuth();
+  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+
+  useEffect(() => {
+    async function loadLatestPosts() {
+      try {
+        const res = await blogApi.getAll();
+        // The API automatically enforces is_published: true for public queries
+        setLatestPosts(res.data?.slice(0, 3) || []);
+      } catch (err) {
+        console.error('Failed to load homepage blog posts:', err);
+      }
+    }
+    loadLatestPosts();
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--canvas)', display: 'flex', flexDirection: 'column' }}>
@@ -74,6 +90,23 @@ export default function HomePage() {
             Explore Courses
           </Link>
 
+          <Link
+            href="/blog"
+            style={{
+              fontSize: '13.5px',
+              fontWeight: 600,
+              color: 'var(--ink-soft)',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              transition: 'background-color 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--canvas)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            Knowledge Hub & Blog
+          </Link>
+
           {user ? (
             <Link
               href="/dashboard"
@@ -108,25 +141,23 @@ export default function HomePage() {
                   textDecoration: 'none',
                   transition: 'border-color 0.15s ease',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
               >
                 Sign In
               </Link>
               <Link
                 href="/signup"
                 style={{
+                  fontSize: '13.5px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
                   padding: '8px 18px',
                   borderRadius: '8px',
                   backgroundColor: 'var(--primary)',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '13.5px',
                   textDecoration: 'none',
-                  boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
+                  boxShadow: '0 2px 8px rgba(242, 102, 42, 0.25)',
                 }}
               >
-                Sign Up
+                Register
               </Link>
             </>
           )}
@@ -138,7 +169,7 @@ export default function HomePage() {
         style={{
           padding: '80px 24px 60px',
           textAlign: 'center',
-          maxWidth: '860px',
+          maxWidth: '900px',
           margin: '0 auto',
           width: '100%',
         }}
@@ -189,7 +220,7 @@ export default function HomePage() {
           access controls for students, instructors, content managers, and administrators.
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <Link
             href={user ? '/dashboard' : '/login'}
             style={{
@@ -219,6 +250,21 @@ export default function HomePage() {
             }}
           >
             Browse Courses
+          </Link>
+          <Link
+            href="/blog"
+            style={{
+              padding: '13px 24px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--canvas)',
+              border: '1px solid var(--border)',
+              color: 'var(--ink)',
+              fontSize: '15px',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            Read Articles & Guides
           </Link>
         </div>
       </section>
@@ -310,6 +356,112 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Latest Published Articles Section on Homepage */}
+      {latestPosts.length > 0 && (
+        <section
+          style={{
+            maxWidth: '1100px',
+            margin: '0 auto 80px',
+            width: '100%',
+            padding: '0 24px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
+                Latest Publications & Engineering Guides
+              </h2>
+              <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: 0 }}>
+                Articles, architectural patterns, and tutorials authored by our content team
+              </p>
+            </div>
+
+            <Link
+              href="/blog"
+              style={{
+                fontSize: '13px',
+                fontWeight: 700,
+                color: 'var(--primary)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              View All Articles →
+            </Link>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '20px',
+            }}
+          >
+            {latestPosts.map((post) => (
+              <div
+                key={post.id}
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: '16px',
+                  border: '1px solid var(--border)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+              >
+                {post.cover_image_url && (
+                  <div
+                    style={{
+                      height: '180px',
+                      backgroundImage: `url(${post.cover_image_url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  />
+                )}
+
+                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', gap: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', marginBottom: '8px' }}>
+                      {post.published_date ? new Date(post.published_date).toLocaleDateString() : 'Published'} • By {post.author?.username || 'Editorial Team'}
+                    </div>
+
+                    <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', lineHeight: 1.35 }}>
+                      <Link href={`/blog/${post.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                        {post.title}
+                      </Link>
+                    </h3>
+
+                    <p style={{ fontSize: '13px', color: 'var(--ink-soft)', lineHeight: 1.6, margin: 0 }}>
+                      {post.excerpt || post.content.replace(/<[^>]*>?/gm, '').slice(0, 120) + '...'}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      color: 'var(--primary)',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    Read Full Story →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Footer */}
       <footer
         style={{
@@ -322,13 +474,20 @@ export default function HomePage() {
           justifyContent: 'space-between',
           fontSize: '13px',
           color: 'var(--ink-faint)',
+          flexWrap: 'wrap',
+          gap: '12px',
         }}
       >
         <div>© 2026 PathShala LMS. All rights reserved.</div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <span>Next.js 15 App Router</span>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <Link href="/blog" style={{ color: 'var(--ink-soft)', textDecoration: 'none', fontWeight: 600 }}>
+            Knowledge Hub
+          </Link>
+          <Link href="/courses" style={{ color: 'var(--ink-soft)', textDecoration: 'none', fontWeight: 600 }}>
+            Course Catalog
+          </Link>
           <span>•</span>
-          <span>Strapi v5 Headless CMS</span>
+          <span>Next.js 15 & Strapi v5</span>
         </div>
       </footer>
     </div>

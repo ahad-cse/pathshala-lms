@@ -2,6 +2,8 @@ import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@/typ
 import {
   AdminStats,
   AdminUser,
+  BlogPost,
+  BlogPostFormData,
   Course,
   CourseFormData,
   CourseProgress,
@@ -346,6 +348,44 @@ export const adminApi = {
 
   async deleteUser(userId: number | string): Promise<{ data: { message: string } }> {
     return apiFetch<{ data: { message: string } }>(`/api/admin-dashboard/users/${userId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+/**
+ * Blog & Publication API Service
+ */
+export const blogApi = {
+  async getAll(params?: Record<string, any>): Promise<{ data: BlogPost[]; meta?: any }> {
+    return apiFetch<{ data: BlogPost[]; meta?: any }>('/api/blog-posts', {
+      method: 'GET',
+      params,
+    });
+  },
+
+  async getOne(idOrSlug: string): Promise<{ data: BlogPost }> {
+    return apiFetch<{ data: BlogPost }>(`/api/blog-posts/${idOrSlug}`, {
+      method: 'GET',
+    });
+  },
+
+  async create(data: BlogPostFormData): Promise<{ data: BlogPost }> {
+    return apiFetch<{ data: BlogPost }>('/api/blog-posts', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async update(documentId: string, data: Partial<BlogPostFormData>): Promise<{ data: BlogPost }> {
+    return apiFetch<{ data: BlogPost }>(`/api/blog-posts/${documentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async delete(documentId: string): Promise<void> {
+    return apiFetch<void>(`/api/blog-posts/${documentId}`, {
       method: 'DELETE',
     });
   },

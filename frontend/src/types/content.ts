@@ -126,6 +126,30 @@ export interface AdminUser {
   blocked?: boolean;
 }
 
+export interface BlogPost {
+  id: number;
+  documentId: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  content: string;
+  cover_image_url?: string;
+  is_published: boolean;
+  published_date?: string;
+  author?: User;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BlogPostFormData {
+  title: string;
+  slug?: string;
+  excerpt?: string;
+  content: string;
+  cover_image_url?: string;
+  is_published: boolean;
+}
+
 export interface CourseFormData {
   title: string;
   description: string;

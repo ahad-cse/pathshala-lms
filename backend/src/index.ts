@@ -1,7 +1,18 @@
 import type { Core } from '@strapi/strapi';
 
 export default {
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register(/* { strapi }: { strapi: Core.Strapi } */) {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch (e) {
+      console.warn("Could not auto-create upload directory:", e);
+    }
+  },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     try {

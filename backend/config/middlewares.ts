@@ -35,11 +35,12 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
   {
     name: 'strapi::cors',
     config: {
-      origin: env('FRONTEND_URL')
-        ? [env('FRONTEND_URL'), 'http://localhost:3000', 'http://localhost:1337', /\.vercel\.app$/]
-        : ['*'],
+      origin: (ctx: any) => {
+        const reqOrigin = ctx.get('Origin') || ctx.get('origin');
+        return reqOrigin || '*';
+      },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
-      headers: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+      headers: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
       keepHeaderOnError: true,
     },
   },

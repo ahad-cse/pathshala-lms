@@ -168,11 +168,11 @@ export default function MyCoursesPage() {
                   boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
                 }}
               >
-                Browse Course Catalog →
+                Browse Courses →
               </Link>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
               {enrollments.map((enrollment) => {
                 const course = enrollment.course;
                 if (!course) return null;

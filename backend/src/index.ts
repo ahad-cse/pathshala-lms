@@ -101,6 +101,8 @@ export default {
         'plugin::users-permissions.user.me',
         'plugin::users-permissions.user.find',
         'plugin::users-permissions.user.findOne',
+        'plugin::users-permissions.auth.register',
+        'plugin::users-permissions.auth.callback',
       ];
 
       if (authenticatedRole) {
@@ -177,26 +179,36 @@ export default {
           {
             username: 'admin',
             email: 'admin@demo.com',
+            full_name: 'System Admin',
+            avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
             role_type: 'admin',
           },
           {
             username: 'content_manager',
             email: 'content@demo.com',
+            full_name: 'Nusrat Jahan',
+            avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
             role_type: 'content_manager',
           },
           {
             username: 'instructor',
             email: 'instructor@demo.com',
+            full_name: 'Dr. Rafiqul Islam',
+            avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
             role_type: 'instructor',
           },
           {
             username: 'instructor_b',
             email: 'instructor_b@demo.com',
+            full_name: 'Farhana Ahmed',
+            avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
             role_type: 'instructor',
           },
           {
             username: 'student',
             email: 'student@demo.com',
+            full_name: 'Tanvir Ahmed',
+            avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
             role_type: 'student',
           },
         ];

@@ -2,7 +2,7 @@
   "collectionName": "up_users",
   "info": {
     "name": "user",
-    "description": "Extended user model with LMS role_type, courses, enrollments, progresses, quiz_submissions, and blog_posts",
+    "description": "Extended user model with LMS role_type, avatar_url, full_name, courses, enrollments, progresses, quiz_submissions, and blog_posts",
     "singularName": "user",
     "pluralName": "users",
     "displayName": "User"
@@ -23,6 +23,14 @@
       "minLength": 6,
       "configurable": false,
       "required": true
+    },
+    "full_name": {
+      "type": "string",
+      "configurable": false
+    },
+    "avatar_url": {
+      "type": "string",
+      "configurable": false
     },
     "provider": {
       "type": "string",

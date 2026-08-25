@@ -213,7 +213,7 @@ export default function SingleBlogPage() {
               textDecoration: 'none',
             }}
           >
-            ← Back to Knowledge Hub
+            ← Back to Blog
           </Link>
 
           {post && canAuthor && (

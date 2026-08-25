@@ -9,14 +9,14 @@ import { RoleType } from '@/types/auth';
 interface NavItemConfig {
   label: string;
   href: string;
-  icon: React.ReactNode;
   roles: RoleType[];
+  icon: React.ReactNode;
 }
 
 const NAV_ITEMS: NavItemConfig[] = [
-  // Shared / Role Overview
+  // Common across all authenticated roles
   {
-    label: 'Overview',
+    label: 'Dashboard',
     href: '/dashboard',
     roles: ['admin', 'content_manager', 'instructor', 'student'],
     icon: (
@@ -30,7 +30,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   },
   // Student Specific
   {
-    label: 'Browse Courses',
+    label: 'Courses',
     href: '/courses',
     roles: ['student'],
     icon: (
@@ -47,26 +47,27 @@ const NAV_ITEMS: NavItemConfig[] = [
     roles: ['student'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
       </svg>
     ),
   },
   // Instructor Specific
   {
-    label: 'My Author Courses',
+    label: 'Course Studio',
     href: '/instructor/courses',
     roles: ['instructor'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-        <path d="M10 2v20" />
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
       </svg>
     ),
   },
   {
-    label: 'Quizzes & Scoring',
+    label: 'MCQ Quiz Studio',
     href: '/instructor/quizzes',
-    roles: ['instructor', 'content_manager', 'admin'],
+    roles: ['instructor'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -76,48 +77,50 @@ const NAV_ITEMS: NavItemConfig[] = [
   },
   // Content Manager & Admin
   {
-    label: 'Course Catalog & CMS',
+    label: 'Courses',
     href: '/courses',
     roles: ['admin', 'content_manager'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-        <polyline points="3.29 7 12 12 20.71 7" />
-        <line x1="12" x2="12" y1="22" y2="12" />
+        <rect width="18" height="18" x="3" y="3" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M9 21V9" />
       </svg>
     ),
   },
   {
-    label: 'Articles & Knowledge Hub',
+    label: 'Blog',
     href: '/blog',
-    roles: ['admin', 'content_manager', 'instructor', 'student'],
+    roles: ['admin', 'content_manager'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="16" x2="8" y1="13" y2="13" />
-        <line x1="16" x2="8" y1="17" y2="17" />
-        <polyline points="10 9 9 9 8 9" />
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+        <path d="M18 14h-8" />
+        <path d="M15 18h-5" />
+        <path d="M10 6h8v4h-8V6Z" />
       </svg>
     ),
   },
   // Admin Only
   {
-    label: 'Admin Control Panel',
+    label: 'Admin Control Center',
     href: '/admin',
     roles: ['admin'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+        <path d="m9 12 2 2 4-4" />
       </svg>
     ),
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { user, role, logout } = useAuth();
   const pathname = usePathname();
 
@@ -129,6 +132,7 @@ export default function Sidebar() {
 
   return (
     <aside
+      className={`app-sidebar ${isOpen ? 'sidebar-open' : ''}`}
       style={{
         width: '248px',
         flexShrink: 0,
@@ -145,90 +149,88 @@ export default function Sidebar() {
       }}
     >
       {/* Brand Header */}
-      <Link
-        href="/"
-        title="Go to Home"
-        onClick={(e) => {
-          if (typeof window !== 'undefined' && window.location.pathname === '/') {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '6px 8px 20px',
-          textDecoration: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        <div
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px 20px' }}>
+        <Link
+          href="/"
+          title="Go to Home"
+          onClick={(e) => {
+            if (typeof window !== 'undefined' && window.location.pathname === '/') {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            if (onClose) onClose();
+          }}
           style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '9px',
-            backgroundColor: 'var(--primary)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            fontWeight: 800,
-            fontSize: '17px',
-            fontFamily: 'var(--font-display)',
-            boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
+            gap: '10px',
+            textDecoration: 'none',
+            cursor: 'pointer',
           }}
         >
-          P
-        </div>
-        <div>
           <div
             style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '9px',
+              backgroundColor: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFFFFF',
               fontWeight: 800,
-              fontSize: '16.5px',
-              letterSpacing: '-0.02em',
-              color: 'var(--ink)',
+              fontSize: '17px',
               fontFamily: 'var(--font-display)',
+              boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
             }}
           >
-            PathShala
+            P
           </div>
-          <div
-            style={{
-              fontSize: '11px',
-              color: 'var(--ink-faint)',
-              marginTop: '-2px',
-              fontWeight: 500,
-            }}
-          >
-            LMS Platform
+          <div>
+            <div
+              style={{
+                fontWeight: 800,
+                fontSize: '16.5px',
+                letterSpacing: '-0.02em',
+                color: 'var(--ink)',
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              PathShala
+            </div>
+            <div
+              style={{
+                fontSize: '11px',
+                color: 'var(--ink-faint)',
+                fontWeight: 600,
+                lineHeight: 1,
+              }}
+            >
+              LMS Platform
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
 
-      {/* Role Indicator Banner in Sidebar */}
-      <div
-        style={{
-          margin: '0 8px 16px',
-          padding: '8px 10px',
-          borderRadius: '8px',
-          backgroundColor: roleConfig.softColor,
-          border: `1px solid ${roleConfig.color}22`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <span
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: roleConfig.color,
-          }}
-        />
-        <div style={{ fontSize: '11.5px', fontWeight: 600, color: roleConfig.color }}>
-          {roleConfig.label} Mode
-        </div>
+        {/* Mobile Close Button */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Close Sidebar"
+            style={{
+              padding: '6px',
+              borderRadius: '6px',
+              backgroundColor: 'transparent',
+              color: 'var(--ink-soft)',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+            className="mobile-menu-btn"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Dynamic Nav Group */}
@@ -251,38 +253,38 @@ export default function Sidebar() {
 
           return (
             <Link
-              key={item.href + item.label}
+              key={item.href}
               href={item.href}
+              onClick={() => {
+                if (onClose) onClose();
+              }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
                 padding: '9px 12px',
                 borderRadius: '8px',
-                color: isActive ? roleConfig.color : 'var(--ink-soft)',
-                backgroundColor: isActive ? roleConfig.softColor : 'transparent',
-                fontWeight: isActive ? 600 : 500,
-                fontSize: '13.5px',
-                position: 'relative',
+                fontSize: '13px',
+                fontWeight: isActive ? 700 : 500,
                 textDecoration: 'none',
-                transition: 'all 0.15s ease',
+                color: isActive ? '#FFFFFF' : 'var(--ink-soft)',
+                backgroundColor: isActive ? 'var(--primary)' : 'transparent',
+                transition: 'all 0.12s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'var(--canvas)';
+                  e.currentTarget.style.color = 'var(--ink)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--ink-soft)';
+                }
               }}
             >
-              {/* Active Left Pill Indicator */}
-              {isActive && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: '-14px',
-                    top: '6px',
-                    bottom: '6px',
-                    width: '3.5px',
-                    borderRadius: '0 4px 4px 0',
-                    backgroundColor: roleConfig.color,
-                  }}
-                />
-              )}
-              <span style={{ display: 'flex', alignItems: 'center', opacity: isActive ? 1 : 0.75 }}>
+              <span style={{ display: 'flex', alignItems: 'center', opacity: isActive ? 1 : 0.8 }}>
                 {item.icon}
               </span>
               <span>{item.label}</span>
@@ -291,108 +293,116 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Sidebar Footer — User Card & Role Badge */}
+      {/* User Profile & Role Info Footer */}
       <div
         style={{
-          marginTop: 'auto',
+          borderTop: '1px solid var(--border)',
           paddingTop: '14px',
-          borderTop: '1px solid var(--border-soft)',
+          marginTop: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px',
+          gap: '10px',
         }}
       >
+        {/* User Card */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            padding: '8px',
-            borderRadius: '10px',
+            justifyContent: 'space-between',
+            padding: '8px 10px',
             backgroundColor: 'var(--canvas)',
+            borderRadius: '10px',
+            border: '1px solid var(--border-soft)',
+            gap: '8px',
           }}
         >
-          {/* Avatar Ring with Role Color */}
-          <div
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '50%',
-              backgroundColor: roleConfig.softColor,
-              color: roleConfig.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: '13px',
-              border: `2px solid ${roleConfig.color}`,
-              flexShrink: 0,
-            }}
-          >
-            {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
-          </div>
-
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontSize: '13px',
-                fontWeight: 600,
-                color: 'var(--ink)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {user?.username || 'Guest'}
-            </div>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '10px',
-                fontWeight: 700,
-                padding: '1px 6px',
-                borderRadius: '99px',
-                backgroundColor: roleConfig.softColor,
-                color: roleConfig.color,
-                marginTop: '1px',
-                textTransform: 'none',
-                letterSpacing: '0.03em',
-              }}
-            >
-              <span
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', minWidth: 0 }}>
+            {user?.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user?.username || 'User'}
+                style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <div
                 style={{
-                  width: '4px',
-                  height: '4px',
+                  width: '30px',
+                  height: '30px',
                   borderRadius: '50%',
                   backgroundColor: roleConfig.color,
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
                 }}
-              />
-              {roleConfig.label}
+              >
+                {(user?.full_name || user?.username || 'U').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div style={{ overflow: 'hidden', minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                }}
+              >
+                {user?.full_name || user?.username || 'Authenticated User'}
+              </div>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: '99px',
+                  backgroundColor: roleConfig.softColor,
+                  color: roleConfig.color,
+                  marginTop: '1px',
+                  textTransform: 'none',
+                  letterSpacing: '0.03em',
+                }}
+              >
+                <span
+                  style={{
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '50%',
+                    backgroundColor: roleConfig.color,
+                  }}
+                />
+                {roleConfig.label}
+              </div>
             </div>
           </div>
 
           {/* Logout Action Button */}
           <button
             onClick={logout}
-            title="Sign Out"
             style={{
-              background: 'none',
-              border: 'none',
               padding: '6px',
               borderRadius: '6px',
+              backgroundColor: 'transparent',
               color: 'var(--ink-faint)',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'color 0.15s ease',
             }}
+            title="Sign Out"
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--danger)')}
             onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink-faint)')}
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" x2="9" y1="12" y2="12" />

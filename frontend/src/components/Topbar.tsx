@@ -8,9 +8,10 @@ import Link from 'next/link';
 interface TopbarProps {
   title?: string;
   subtitle?: string;
+  onToggleSidebar?: () => void;
 }
 
-export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
+export default function Topbar({ title = 'Dashboard', subtitle, onToggleSidebar }: TopbarProps) {
   const { user, role, switchDemoRole, logout } = useAuth();
   const [isSwitching, setIsSwitching] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -34,6 +35,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
 
   return (
     <header
+      className="topbar-header"
       style={{
         height: '64px',
         backgroundColor: 'rgba(255, 255, 255, 0.92)',
@@ -50,36 +52,65 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
       }}
     >
-      {/* Title / Breadcrumb */}
-      <div>
-        <h1
-          style={{
-            fontSize: '18px',
-            fontWeight: 700,
-            color: 'var(--ink)',
-            margin: 0,
-            lineHeight: 1.2,
-          }}
-        >
-          {title}
-        </h1>
-        {subtitle && (
-          <p
+      {/* Title / Breadcrumb / Mobile Hamburger Button */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            aria-label="Open Navigation Menu"
+            className="mobile-menu-btn"
             style={{
-              fontSize: '12px',
-              color: 'var(--ink-soft)',
-              margin: '2px 0 0',
-              lineHeight: 1,
+              padding: '8px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--canvas)',
+              border: '1px solid var(--border)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {subtitle}
-          </p>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" x2="20" y1="12" y2="12" />
+              <line x1="4" x2="20" y1="6" y2="6" />
+              <line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
+          </button>
         )}
+
+        <div>
+          <h1
+            className="topbar-title"
+            style={{
+              fontSize: '17px',
+              fontWeight: 700,
+              color: 'var(--ink)',
+              margin: 0,
+              lineHeight: 1.2,
+            }}
+          >
+            {title}
+          </h1>
+          {subtitle && (
+            <p
+              className="topbar-subtitle"
+              style={{
+                fontSize: '12px',
+                color: 'var(--ink-soft)',
+                margin: '2px 0 0',
+                lineHeight: 1,
+              }}
+            >
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Action Area: Demo Role Switcher & User Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        {/* Quick Demo Switcher Dropdown (Essential for video walkthrough & grading) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Quick Demo Switcher Dropdown */}
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setShowRoleMenu(!showRoleMenu)}
@@ -93,7 +124,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
               backgroundColor: 'var(--canvas)',
               border: '1px solid var(--border)',
               color: 'var(--ink)',
-              fontSize: '12.5px',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -123,7 +154,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
                 position: 'absolute',
                 right: 0,
                 top: 'calc(100% + 6px)',
-                width: '240px',
+                width: '230px',
                 backgroundColor: 'var(--surface)',
                 border: '1px solid var(--border)',
                 borderRadius: '10px',
@@ -164,7 +195,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
                       borderRadius: '6px',
                       backgroundColor: isSelected ? conf.softColor : 'transparent',
                       color: isSelected ? conf.color : 'var(--ink)',
-                      fontSize: '12.5px',
+                      fontSize: '12px',
                       fontWeight: isSelected ? 700 : 500,
                       cursor: 'pointer',
                       border: 'none',
@@ -185,7 +216,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
                       <span>{conf.label}</span>
                     </div>
                     {isSelected && (
-                      <span style={{ fontSize: '11px', fontWeight: 600 }}>Active</span>
+                      <span style={{ fontSize: '10.5px', fontWeight: 600 }}>Active</span>
                     )}
                   </button>
                 );
@@ -198,7 +229,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
         <Link
           href="/courses"
           style={{
-            fontSize: '12.5px',
+            fontSize: '12px',
             color: 'var(--ink-soft)',
             fontWeight: 500,
             textDecoration: 'none',
@@ -208,8 +239,38 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--canvas)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          Catalog
+          Courses
         </Link>
+
+        {/* User Mini Avatar Pill */}
+        {user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '4px' }}>
+            {user.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.username}
+                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  backgroundColor: roleConfig.color,
+                  color: '#FFFFFF',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {(user.full_name || user.username).charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

@@ -253,7 +253,7 @@ export default function InstructorQuizzesPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
               {quizzes.map((quiz) => {
                 const qCount = quiz.questions?.length || 0;
                 const courseTitle = quiz.course?.title || 'General Curriculum';

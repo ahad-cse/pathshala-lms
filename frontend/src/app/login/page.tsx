@@ -123,7 +123,7 @@ export default function LoginPage() {
               marginBottom: '8px',
             }}
           >
-            ⚡ 1-Click Demo Login (Test Roles)
+            1-Click Demo Login (Test Roles)
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
             {(['admin', 'content_manager', 'instructor', 'student'] as RoleType[]).map((r) => {
@@ -212,7 +212,7 @@ export default function LoginPage() {
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="e.g. student@demo.com"
+              placeholder="Enter your email or username"
               required
               style={{
                 width: '100%',
@@ -250,7 +250,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
+                placeholder="Enter your password"
                 required
                 style={{
                   width: '100%',

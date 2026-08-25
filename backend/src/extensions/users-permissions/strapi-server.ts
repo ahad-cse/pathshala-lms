@@ -4,15 +4,19 @@
  * Reasoning:
  * 1. Sanitizes user registration so that all public sign-ups are strictly assigned 'student' role.
  *    Any payload attempting to pass role_type='admin' or 'instructor' will be overwritten to 'student'.
- * 2. Restricts user updating (/api/users/:id) so that only Admins can modify role_type.
- * 3. Ensures /api/users/me returns role_type properly.
+ * 2. Saves avatar_url and full_name during registration.
+ * 3. Restricts user updating (/api/users/:id) so that only Admins can modify role_type.
+ * 4. Ensures /api/users/me returns role_type, avatar_url, and full_name properly.
  */
 
 export default (plugin: any) => {
-  // Override Register action to strictly enforce role_type = 'student'
+  // Override Register action to strictly enforce role_type = 'student' and capture profile fields
   const originalRegister = plugin.controllers.auth.register;
 
   plugin.controllers.auth.register = async (ctx: any) => {
+    const avatarUrl = ctx.request.body?.avatar_url || '';
+    const fullName = ctx.request.body?.full_name || '';
+
     // Force role_type to 'student' regardless of what client payload sends
     if (ctx.request.body) {
       delete ctx.request.body.role_type;
@@ -21,13 +25,20 @@ export default (plugin: any) => {
     // Call original register
     await originalRegister(ctx);
 
-    // Ensure the created user in the database is set to role_type: 'student'
+    // Ensure the created user in the database is set to role_type: 'student' and has profile fields
     if (ctx.body && ctx.body.user && ctx.body.user.id) {
+      const updateData: any = { role_type: 'student' };
+      if (avatarUrl) updateData.avatar_url = avatarUrl;
+      if (fullName) updateData.full_name = fullName;
+
       await strapi.db.query('plugin::users-permissions.user').update({
         where: { id: ctx.body.user.id },
-        data: { role_type: 'student' },
+        data: updateData,
       });
+
       ctx.body.user.role_type = 'student';
+      if (avatarUrl) ctx.body.user.avatar_url = avatarUrl;
+      if (fullName) ctx.body.user.full_name = fullName;
     }
   };
 

@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-08-25T18:25:45.151Z"
+    "x-generation-date": "2026-08-25T19:03:09.838Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -5271,6 +5271,12 @@
                 "type": "string",
                 "format": "email"
               },
+              "full_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string"
+              },
               "provider": {
                 "type": "string"
               },
@@ -7493,6 +7499,12 @@
               "email": {
                 "type": "string",
                 "format": "email"
+              },
+              "full_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string"
               },
               "provider": {
                 "type": "string"
@@ -9720,6 +9732,12 @@
               "email": {
                 "type": "string",
                 "format": "email"
+              },
+              "full_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string"
               },
               "provider": {
                 "type": "string"
@@ -11952,6 +11970,12 @@
                     "type": "string",
                     "format": "email"
                   },
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "avatar_url": {
+                    "type": "string"
+                  },
                   "provider": {
                     "type": "string"
                   },
@@ -14098,6 +14122,12 @@
               "email": {
                 "type": "string",
                 "format": "email"
+              },
+              "full_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string"
               },
               "provider": {
                 "type": "string"
@@ -16358,6 +16388,12 @@
                     "type": "string",
                     "format": "email"
                   },
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "avatar_url": {
+                    "type": "string"
+                  },
                   "provider": {
                     "type": "string"
                   },
@@ -18529,6 +18565,12 @@
               "email": {
                 "type": "string",
                 "format": "email"
+              },
+              "full_name": {
+                "type": "string"
+              },
+              "avatar_url": {
+                "type": "string"
               },
               "provider": {
                 "type": "string"

@@ -63,8 +63,9 @@ export async function apiFetch<T = any>(
     'Content-Type': 'application/json',
   };
 
-  // Attach token from options or localStorage if in browser
-  const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('pathshala_token') : null);
+  // Attach token from options or localStorage if in browser (skip for public auth endpoints)
+  const isPublicAuthEndpoint = endpoint.startsWith('/api/auth/local');
+  const authToken = !isPublicAuthEndpoint && (token || (typeof window !== 'undefined' ? localStorage.getItem('pathshala_token') : null));
   if (authToken) {
     defaultHeaders['Authorization'] = `Bearer ${authToken}`;
   }

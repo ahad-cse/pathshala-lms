@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('pathshala_user');
       document.cookie = 'pathshala_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
-    router.push('/login');
+    router.replace('/login');
   }, [router]);
 
   // Restore session on mount

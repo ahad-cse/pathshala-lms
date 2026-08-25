@@ -10,6 +10,15 @@ import { BlogPost } from '@/types/content';
 export default function HomePage() {
   const { user, role } = useAuth();
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const roleDashboardLabel = role === 'admin'
+    ? 'Admin Dashboard'
+    : role === 'content_manager'
+    ? 'Content Dashboard'
+    : role === 'instructor'
+    ? 'Instructor Studio'
+    : 'Student Dashboard';
 
   useEffect(() => {
     async function loadLatestPosts() {
@@ -28,6 +37,7 @@ export default function HomePage() {
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--canvas)', display: 'flex', flexDirection: 'column', paddingTop: '70px' }}>
       {/* Header / Navbar (Fixed Pinned Glassmorphic) */}
       <header
+        className="landing-nav"
         style={{
           height: '70px',
           backgroundColor: 'rgba(255, 255, 255, 0.94)',
@@ -87,8 +97,8 @@ export default function HomePage() {
           </div>
         </Link>
 
-        {/* Navigation Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Desktop Navigation Links */}
+        <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Link
             href="/courses"
             style={{
@@ -120,7 +130,7 @@ export default function HomePage() {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--canvas)')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
-            Knowledge Hub & Blog
+            Blog
           </Link>
 
           {user ? (
@@ -129,18 +139,55 @@ export default function HomePage() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--primary)',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: '13.5px',
+                gap: '10px',
+                padding: '4px 14px 4px 6px',
+                borderRadius: '99px',
+                backgroundColor: 'var(--canvas)',
+                border: '1px solid var(--border)',
                 textDecoration: 'none',
-                boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
+                transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+              title={`Go to ${roleDashboardLabel}`}
             >
-              Go to Dashboard ({user.username}) →
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--primary)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {(user.full_name || user.username).charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2 }}>
+                  {user.full_name || user.username}
+                </span>
+                <span style={{ fontSize: '10px', color: 'var(--ink-faint)', fontWeight: 600 }}>
+                  {role === 'admin' ? 'Admin' : role === 'instructor' ? 'Instructor' : role === 'content_manager' ? 'Content' : 'Student'} • Dashboard →
+                </span>
+              </div>
             </Link>
           ) : (
             <>
@@ -178,7 +225,219 @@ export default function HomePage() {
             </>
           )}
         </div>
+
+        {/* Mobile Hamburger Toggle */}
+        <div className="mobile-nav-toggle" style={{ display: 'none', alignItems: 'center', gap: '10px' }}>
+          {user ? (
+            <Link
+              href="/dashboard"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px 4px 4px',
+                borderRadius: '99px',
+                backgroundColor: 'var(--canvas)',
+                border: '1px solid var(--border)',
+                textDecoration: 'none',
+              }}
+            >
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--primary)',
+                    color: '#fff',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {(user.full_name || user.username).charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink)' }}>
+                {user.username}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)',
+                color: 'var(--ink)',
+                fontSize: '12px',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Sign In
+            </Link>
+          )}
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle Mobile Menu"
+            style={{
+              padding: '7px 8px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--canvas)',
+              border: '1px solid var(--border)',
+              color: 'var(--ink)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {mobileMenuOpen ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+              </svg>
+            )}
+          </button>
+        </div>
       </header>
+
+      {/* Mobile Nav Dropdown Drawer */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-nav-dropdown"
+          style={{
+            position: 'fixed',
+            top: '70px',
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid var(--border)',
+            boxShadow: '0 12px 24px -6px rgba(0, 0, 0, 0.1)',
+            padding: '16px 20px',
+            zIndex: 998,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <Link
+            href="/courses"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              padding: '11px 14px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--ink)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              backgroundColor: 'var(--canvas)',
+            }}
+          >
+            <span>📚</span>
+            <span>Courses</span>
+          </Link>
+
+          <Link
+            href="/blog"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              padding: '11px 14px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--ink)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              backgroundColor: 'var(--canvas)',
+            }}
+          >
+            <span>📰</span>
+            <span>Blog</span>
+          </Link>
+
+          <div style={{ height: '1px', backgroundColor: 'var(--border-soft)', margin: '4px 0' }} />
+
+          {user ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--primary)',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: '14px',
+                textAlign: 'center',
+                textDecoration: 'none',
+              }}
+            >
+              {roleDashboardLabel} ({user.username}) →
+            </Link>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  padding: '11px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--surface)',
+                  color: 'var(--ink)',
+                  fontWeight: 600,
+                  fontSize: '13.5px',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                }}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  padding: '11px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--primary)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '13.5px',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                }}
+              >
+                Register
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Hero Section */}
       <section
@@ -210,8 +469,9 @@ export default function HomePage() {
         </div>
 
         <h1
+          className="hero-heading"
           style={{
-            fontSize: '44px',
+            fontSize: 'clamp(28px, 5vw, 44px)',
             fontWeight: 800,
             lineHeight: 1.15,
             color: 'var(--ink)',
@@ -236,7 +496,7 @@ export default function HomePage() {
           access controls for students, instructors, content managers, and administrators.
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+        <div className="hero-cta-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <Link
             href={user ? '/dashboard' : '/login'}
             style={{
@@ -250,7 +510,7 @@ export default function HomePage() {
               boxShadow: '0 4px 14px rgba(242, 102, 42, 0.35)',
             }}
           >
-            {user ? 'Enter Your Portal →' : 'Get Started Now →'}
+            {user ? `Enter ${roleDashboardLabel} →` : 'Get Started Now →'}
           </Link>
           <Link
             href="/courses"
@@ -411,7 +671,7 @@ export default function HomePage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 290px), 1fr))',
               gap: '20px',
             }}
           >
@@ -497,10 +757,10 @@ export default function HomePage() {
         <div>© 2026 PathShala LMS. All rights reserved.</div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <Link href="/blog" style={{ color: 'var(--ink-soft)', textDecoration: 'none', fontWeight: 600 }}>
-            Knowledge Hub
+            Blog
           </Link>
           <Link href="/courses" style={{ color: 'var(--ink-soft)', textDecoration: 'none', fontWeight: 600 }}>
-            Course Catalog
+            Courses
           </Link>
           <span>•</span>
           <span>Next.js 15 & Strapi v5</span>

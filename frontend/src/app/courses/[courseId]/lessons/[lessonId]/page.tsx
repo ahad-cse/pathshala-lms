@@ -113,8 +113,24 @@ export default function LessonViewerPage({ params }: PageProps) {
   return (
     <ProtectedRoute>
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--canvas)' }}>
+        {/* Mobile Backdrop for Lesson Drawer */}
+        {isSidebarOpen && (
+          <div
+            className="mobile-backdrop"
+            onClick={() => setIsSidebarOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 999,
+            }}
+          />
+        )}
+
         {/* Left Lesson Playlist Sidebar */}
         <aside
+          className="lesson-sidebar"
           style={{
             width: isSidebarOpen ? '320px' : '0',
             transition: 'width 0.2s ease',
@@ -127,6 +143,7 @@ export default function LessonViewerPage({ params }: PageProps) {
             top: 0,
             height: '100vh',
             flexShrink: 0,
+            zIndex: 30,
           }}
         >
           {/* Header & Course Progress Summary */}
@@ -378,7 +395,7 @@ export default function LessonViewerPage({ params }: PageProps) {
           </header>
 
           {/* Lesson Main View Area */}
-          <main style={{ flex: 1, padding: '32px', maxWidth: '960px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+          <main className="lesson-main" style={{ flex: 1, padding: '32px', maxWidth: '960px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
             {loading ? (
               <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)' }}>
                 Loading lesson content...

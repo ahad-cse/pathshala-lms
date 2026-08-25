@@ -18,7 +18,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [user, isLoading, router, pathname]);
 

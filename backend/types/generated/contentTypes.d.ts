@@ -1150,7 +1150,7 @@ export interface PluginUsersPermissionsUser
   extends Struct.CollectionTypeSchema {
   collectionName: 'up_users';
   info: {
-    description: 'Extended user model with LMS role_type, courses, enrollments, progresses, quiz_submissions, and blog_posts';
+    description: 'Extended user model with LMS role_type, avatar_url, full_name, courses, enrollments, progresses, quiz_submissions, and blog_posts';
     displayName: 'User';
     name: 'user';
     pluralName: 'users';
@@ -1161,6 +1161,7 @@ export interface PluginUsersPermissionsUser
     timestamps: true;
   };
   attributes: {
+    avatar_url: Schema.Attribute.String;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     blog_posts: Schema.Attribute.Relation<
       'oneToMany',
@@ -1181,6 +1182,7 @@ export interface PluginUsersPermissionsUser
       'oneToMany',
       'api::enrollment.enrollment'
     >;
+    full_name: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',

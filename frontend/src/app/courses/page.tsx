@@ -161,7 +161,7 @@ export default function CoursesPage() {
   return (
     <ProtectedRoute>
       <AppShell
-        title="Course Catalog & Curriculum"
+        title="Courses"
         subtitle={
           canManageGlobal
             ? 'Manage all courses, curriculum syllabus, and author assignments'
@@ -295,7 +295,7 @@ export default function CoursesPage() {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
               {filteredCourses.map((course) => {
                 const isManaged = canManageCourse(course);
                 const isExpanded = expandedCourseId === course.documentId;

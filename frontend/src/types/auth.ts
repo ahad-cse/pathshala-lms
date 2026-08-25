@@ -5,6 +5,8 @@ export interface User {
   documentId?: string;
   username: string;
   email: string;
+  full_name?: string;
+  avatar_url?: string;
   role_type: RoleType;
   confirmed?: boolean;
   blocked?: boolean;
@@ -26,4 +28,6 @@ export interface RegisterCredentials {
   username: string;
   email: string;
   password: string;
+  full_name?: string;
+  avatar_url?: string;
 }

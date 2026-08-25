@@ -152,7 +152,7 @@ export default function BlogPage() {
 
   return (
     <AppShell
-      title="Knowledge Hub & Publications"
+      title="Blog"
       subtitle="Engineering essays, architectural walkthroughs, and learning resources"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -316,7 +316,7 @@ export default function BlogPage() {
                   border: '1px solid var(--border)',
                   overflow: 'hidden',
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 290px), 1fr))',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
                 }}
               >
@@ -462,7 +462,7 @@ export default function BlogPage() {
 
             {/* Remaining Grid of Articles */}
             {remainingPosts.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 290px), 1fr))', gap: '20px' }}>
                 {remainingPosts.map((post) => (
                   <div
                     key={post.id}

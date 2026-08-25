@@ -127,7 +127,7 @@ export default function AdminPage() {
           )}
 
           {/* Platform Metric Overview Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '16px' }}>
             {/* Card 1: Users */}
             <div
               style={{
@@ -467,7 +467,7 @@ export default function AdminPage() {
           </div>
 
           {/* Quick Management Shortcuts */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '16px' }}>
             <Link
               href="/courses"
               style={{

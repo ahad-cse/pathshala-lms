@@ -108,7 +108,7 @@ export default function DashboardPage() {
                     boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
                   }}
                 >
-                  Browse Courses →
+                  Courses →
                 </Link>
               )}
 
@@ -155,7 +155,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Role-Specific Metric Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px' }}>
             {currentRole === 'student' && (
               <>
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
@@ -348,7 +348,7 @@ export default function DashboardPage() {
                 onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
               >
                 <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                  📚 Course Catalog
+                  📚 Courses
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
                   Explore web development & computer science courses
@@ -425,7 +425,7 @@ export default function DashboardPage() {
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
                 >
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                    📰 Blog & Announcements
+                    📰 Blog
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
                     Publish educational articles & updates

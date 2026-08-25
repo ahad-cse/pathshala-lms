@@ -4,18 +4,24 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi } from '@/lib/api';
-import { Course, Lesson } from '@/types/content';
+import { courseApi, lessonApi, enrollmentApi } from '@/lib/api';
+import { Course, Lesson, Enrollment } from '@/types/content';
 import CourseModal from '@/components/CourseModal';
 import LessonModal from '@/components/LessonModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function CoursesPage() {
   const { user, role } = useAuth();
+  const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
+  const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modals state
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
@@ -37,26 +43,35 @@ export default function CoursesPage() {
     title: '',
   });
 
-  // Expanded course ID for lesson management view
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
   const canManageGlobal = role === 'admin' || role === 'content_manager';
 
-  const loadCourses = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await courseApi.getAll();
-      setCourses(res?.data || []);
+      const [coursesRes, enrollmentsRes] = await Promise.all([
+        courseApi.getAll(),
+        role === 'student' ? enrollmentApi.getMyEnrollments().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+      ]);
+
+      setCourses(coursesRes?.data || []);
+
+      const enrolledIds = new Set<string>();
+      (enrollmentsRes?.data || []).forEach((e: Enrollment) => {
+        if (e.course?.documentId) enrolledIds.add(e.course.documentId);
+      });
+      setEnrolledCourseIds(enrolledIds);
     } catch (err) {
-      console.error('Failed to load courses:', err);
+      console.error('Failed to load courses data:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [role]);
 
   useEffect(() => {
-    loadCourses();
-  }, [loadCourses]);
+    loadData();
+  }, [loadData]);
 
   const canManageCourse = (course: Course) => {
     if (canManageGlobal) return true;
@@ -66,6 +81,22 @@ export default function CoursesPage() {
       return (instId && instId === user?.id) || (instDocId && instDocId === user?.documentId);
     }
     return false;
+  };
+
+  const handleEnroll = async (course: Course) => {
+    setEnrollingCourseId(course.documentId);
+    try {
+      await enrollmentApi.enroll(course.documentId);
+      setToastMessage(`Successfully enrolled in "${course.title}"!`);
+      setEnrolledCourseIds((prev) => new Set(prev).add(course.documentId));
+      setTimeout(() => {
+        router.push('/my-courses');
+      }, 1200);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to enroll in course.');
+    } finally {
+      setEnrollingCourseId(null);
+    }
   };
 
   const handleOpenCreateCourse = () => {
@@ -114,10 +145,9 @@ export default function CoursesPage() {
     } else {
       await lessonApi.delete(deleteModalState.id);
     }
-    loadCourses();
+    loadData();
   };
 
-  // Filter courses
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -139,6 +169,27 @@ export default function CoursesPage() {
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Toast feedback */}
+          {toastMessage && (
+            <div
+              style={{
+                backgroundColor: 'var(--success-soft)',
+                color: 'var(--success)',
+                border: '1px solid rgba(22, 163, 74, 0.2)',
+                borderRadius: '10px',
+                padding: '12px 18px',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <span>🎉</span>
+              <span>{toastMessage} Redirecting to My Courses...</span>
+            </div>
+          )}
+
           {/* Header Controls: Search, Filter & Create Button */}
           <div
             style={{
@@ -249,6 +300,9 @@ export default function CoursesPage() {
                 const isManaged = canManageCourse(course);
                 const isExpanded = expandedCourseId === course.documentId;
                 const lessonsCount = course.lessons?.length || 0;
+                const isEnrolled = enrolledCourseIds.has(course.documentId);
+                const isEnrolling = enrollingCourseId === course.documentId;
+                const firstLesson = course.lessons?.sort((a, b) => (a.order || 0) - (b.order || 0))[0];
 
                 return (
                   <div
@@ -374,6 +428,7 @@ export default function CoursesPage() {
                           paddingTop: '14px',
                           fontSize: '12.5px',
                           color: 'var(--ink-faint)',
+                          marginBottom: '12px',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -403,8 +458,57 @@ export default function CoursesPage() {
                         </span>
                       </div>
 
+                      {/* Student Enrollment CTA Button */}
+                      {role === 'student' && (
+                        <div style={{ marginBottom: '10px' }}>
+                          {isEnrolled ? (
+                            <Link
+                              href={firstLesson ? `/courses/${course.documentId}/lessons/${firstLesson.documentId}` : '/my-courses'}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: '8px',
+                                backgroundColor: 'var(--success-soft)',
+                                color: 'var(--success)',
+                                border: '1px solid rgba(22, 163, 74, 0.25)',
+                                fontWeight: 700,
+                                fontSize: '13px',
+                                textDecoration: 'none',
+                                boxSizing: 'border-box',
+                              }}
+                            >
+                              <span>✓ Enrolled • Go to Lessons</span>
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => handleEnroll(course)}
+                              disabled={isEnrolling}
+                              style={{
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: '8px',
+                                backgroundColor: 'var(--primary)',
+                                color: '#FFFFFF',
+                                fontWeight: 700,
+                                fontSize: '13px',
+                                cursor: isEnrolling ? 'not-allowed' : 'pointer',
+                                opacity: isEnrolling ? 0.7 : 1,
+                                border: 'none',
+                                boxShadow: '0 2px 6px rgba(242, 102, 42, 0.3)',
+                              }}
+                            >
+                              {isEnrolling ? 'Enrolling...' : '⚡ Enroll in Course (Free)'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {/* Lesson Management & Syllabus Accordion */}
-                      <div style={{ marginTop: '14px', borderTop: '1px solid var(--border-soft)', paddingTop: '12px' }}>
+                      <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <button
                             onClick={() => setExpandedCourseId(isExpanded ? null : course.documentId)}
@@ -412,7 +516,7 @@ export default function CoursesPage() {
                               background: 'none',
                               border: 'none',
                               color: 'var(--primary)',
-                              fontSize: '12.5px',
+                              fontSize: '12px',
                               fontWeight: 700,
                               cursor: 'pointer',
                               padding: 0,
@@ -421,7 +525,7 @@ export default function CoursesPage() {
                               gap: '4px',
                             }}
                           >
-                            <span>{isExpanded ? 'Hide Lessons' : `View Lessons (${lessonsCount})`}</span>
+                            <span>{isExpanded ? 'Hide Syllabus' : `View Syllabus (${lessonsCount} Lessons)`}</span>
                             <svg
                               width="12"
                               height="12"
@@ -461,7 +565,7 @@ export default function CoursesPage() {
                         {isExpanded && (
                           <div
                             style={{
-                              marginTop: '12px',
+                              marginTop: '10px',
                               display: 'flex',
                               flexDirection: 'column',
                               gap: '6px',
@@ -583,7 +687,7 @@ export default function CoursesPage() {
         <CourseModal
           isOpen={isCourseModalOpen}
           onClose={() => setIsCourseModalOpen(false)}
-          onSuccess={loadCourses}
+          onSuccess={loadData}
           courseToEdit={courseToEdit}
         />
 
@@ -592,7 +696,7 @@ export default function CoursesPage() {
           <LessonModal
             isOpen={isLessonModalOpen}
             onClose={() => setIsLessonModalOpen(false)}
-            onSuccess={loadCourses}
+            onSuccess={loadData}
             targetCourse={activeCourseForLesson}
             lessonToEdit={lessonToEdit}
             defaultOrder={(activeCourseForLesson.lessons?.length || 0) + 1}

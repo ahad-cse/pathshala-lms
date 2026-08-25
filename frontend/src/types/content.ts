@@ -21,6 +21,17 @@ export interface Course {
   cover_color: string;
   instructor?: User;
   lessons?: Lesson[];
+  enrollments?: Enrollment[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Enrollment {
+  id: number;
+  documentId: string;
+  enrolled_at?: string;
+  course?: Course;
+  student?: User;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -30,7 +41,7 @@ export interface CourseFormData {
   description: string;
   category: string;
   cover_color: string;
-  instructor?: string | number; // user documentId or id
+  instructor?: string | number;
 }
 
 export interface LessonFormData {
@@ -38,5 +49,5 @@ export interface LessonFormData {
   content: string;
   video_url?: string;
   order: number;
-  course: string; // course documentId
+  course: string;
 }

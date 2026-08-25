@@ -30,6 +30,14 @@ export default {
         'api::lesson.lesson.delete',
       ];
 
+      const enrollmentActions = [
+        'api::enrollment.enrollment.find',
+        'api::enrollment.enrollment.findOne',
+        'api::enrollment.enrollment.create',
+        'api::enrollment.enrollment.update',
+        'api::enrollment.enrollment.delete',
+      ];
+
       const authTestActions = [
         'api::auth-test.auth-test.adminOnly',
         'api::auth-test.auth-test.contentManagerOnly',
@@ -49,6 +57,7 @@ export default {
           ...authTestActions,
           ...courseActions,
           ...lessonActions,
+          ...enrollmentActions,
         ];
 
         for (const action of allAuthActions) {
@@ -174,12 +183,16 @@ export default {
           .query('plugin::users-permissions.user')
           .findOne({ where: { email: 'content@demo.com' } });
 
-        const existingCourse1 = await strapi.db
+        const studentDemo = await strapi.db
+          .query('plugin::users-permissions.user')
+          .findOne({ where: { email: 'student@demo.com' } });
+
+        let course1 = await strapi.db
           .query('api::course.course')
           .findOne({ where: { title: 'Fullstack Next.js & TypeScript Masterclass' } });
 
-        if (!existingCourse1 && instructorA) {
-          const course1 = await strapi.documents('api::course.course').create({
+        if (!course1 && instructorA) {
+          const createdCourse1 = await strapi.documents('api::course.course').create({
             data: {
               title: 'Fullstack Next.js & TypeScript Masterclass',
               description:
@@ -194,10 +207,10 @@ export default {
             data: {
               title: 'Introduction to Next.js App Router',
               content:
-                'In this lesson, we explore Next.js App Router architecture, Server Components, and client transitions.',
+                '# Introduction to Next.js App Router\n\nIn this lesson, we explore Next.js App Router architecture, Server Components, and client transitions.\n\n```tsx\nexport default function Page() {\n  return <h1>Hello PathShala!</h1>;\n}\n```',
               video_url: 'https://www.youtube.com/watch?v=wm5gMKuwSYk',
               order: 1,
-              course: (course1 as any).documentId || course1.id,
+              course: (createdCourse1 as any).documentId || createdCourse1.id,
             },
           });
 
@@ -205,10 +218,10 @@ export default {
             data: {
               title: 'Building Type-safe APIs with Strapi',
               content:
-                'Learn how to extend Strapi content-types, implement custom controllers, and enforce role-based security policies.',
+                '# Building Type-safe APIs with Strapi\n\nLearn how to extend Strapi content-types, implement custom controllers, and enforce role-based security policies.\n\n- Custom Controllers\n- Document Service\n- Permission Policies',
               video_url: 'https://www.youtube.com/watch?v=vc_0kWqP6O0',
               order: 2,
-              course: (course1 as any).documentId || course1.id,
+              course: (createdCourse1 as any).documentId || createdCourse1.id,
             },
           });
 
@@ -216,18 +229,19 @@ export default {
             data: {
               title: 'State Management & Progress Persistence',
               content:
-                'Deep dive into client-side state synchronization, optimistic UI updates, and backend percentage calculations.',
+                '# State Management & Progress Persistence\n\nDeep dive into client-side state synchronization, optimistic UI updates, and backend percentage calculations.',
               video_url: '',
               order: 3,
-              course: (course1 as any).documentId || course1.id,
+              course: (createdCourse1 as any).documentId || createdCourse1.id,
             },
           });
 
+          course1 = createdCourse1 as any;
           strapi.log.info('[SEED] Created Course 1 with 3 lessons for instructor@demo.com');
-        } else if (existingCourse1 && instructorA) {
+        } else if (course1 && instructorA) {
           // Link instructor if missing
           await strapi.db.query('api::course.course').update({
-            where: { id: existingCourse1.id },
+            where: { id: course1.id },
             data: { instructor: instructorA.id },
           });
         }
@@ -252,7 +266,7 @@ export default {
             data: {
               title: 'Big-O Notation & Time Complexity',
               content:
-                'Understanding asymptotic analysis, best/worst/average case time and space complexity.',
+                '# Big-O Notation & Time Complexity\n\nUnderstanding asymptotic analysis, best/worst/average case time and space complexity.',
               video_url: 'https://www.youtube.com/watch?v=v4cd1O4zkGw',
               order: 1,
               course: (course2 as any).documentId || course2.id,
@@ -263,7 +277,7 @@ export default {
             data: {
               title: 'Arrays, Stacks, and Queues',
               content:
-                'Implementing core linear data structures from scratch with memory considerations.',
+                '# Arrays, Stacks, and Queues\n\nImplementing core linear data structures from scratch with memory considerations.',
               video_url: '',
               order: 2,
               course: (course2 as any).documentId || course2.id,
@@ -272,15 +286,43 @@ export default {
 
           strapi.log.info('[SEED] Created Course 2 with 2 lessons for content@demo.com');
         } else if (existingCourse2 && contentMgr) {
-          // Link instructor if missing
           await strapi.db.query('api::course.course').update({
             where: { id: existingCourse2.id },
             data: { instructor: contentMgr.id },
           });
         }
+
+        // Seed Enrollment for student@demo.com in Course 1
+        if (studentDemo && course1) {
+          const existingEnrollment = await strapi.db
+            .query('api::enrollment.enrollment')
+            .findOne({
+              where: {
+                student: studentDemo.id,
+                course: course1.id,
+              },
+            });
+
+          if (!existingEnrollment) {
+            const studentDoc = (studentDemo as any).documentId;
+            const courseDoc = (course1 as any).documentId;
+
+            await strapi.documents('api::enrollment.enrollment').create({
+              data: {
+                student: studentDoc || studentDemo.id,
+                course: courseDoc || course1.id,
+                enrolled_at: new Date().toISOString(),
+              },
+            });
+
+            strapi.log.info(
+              `[SEED] Enrolled student@demo.com in Course 1 ("${course1.title}")`
+            );
+          }
+        }
       }
     } catch (err) {
-      strapi.log.error('[BOOTSTRAP] Error during role, course & lesson bootstrap:', err);
+      strapi.log.error('[BOOTSTRAP] Error during role, course & enrollment bootstrap:', err);
     }
   },
 };

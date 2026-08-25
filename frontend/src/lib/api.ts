@@ -1,5 +1,5 @@
 import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
-import { Course, CourseFormData, Lesson, LessonFormData } from '@/types/content';
+import { Course, CourseFormData, Enrollment, Lesson, LessonFormData } from '@/types/content';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
@@ -161,6 +161,12 @@ export const courseApi = {
  * Lesson Management API Service
  */
 export const lessonApi = {
+  async getOne(documentId: string): Promise<{ data: Lesson }> {
+    return apiFetch<{ data: Lesson }>(`/api/lessons/${documentId}`, {
+      method: 'GET',
+    });
+  },
+
   async create(data: LessonFormData): Promise<{ data: Lesson }> {
     return apiFetch<{ data: Lesson }>('/api/lessons', {
       method: 'POST',
@@ -178,6 +184,28 @@ export const lessonApi = {
   async delete(documentId: string): Promise<void> {
     return apiFetch<void>(`/api/lessons/${documentId}`, {
       method: 'DELETE',
+    });
+  },
+};
+
+/**
+ * Enrollment API Service
+ */
+export const enrollmentApi = {
+  async getMyEnrollments(): Promise<{ data: Enrollment[] }> {
+    return apiFetch<{ data: Enrollment[] }>('/api/enrollments', {
+      method: 'GET',
+    });
+  },
+
+  async enroll(courseDocumentId: string): Promise<{ data: Enrollment }> {
+    return apiFetch<{ data: Enrollment }>('/api/enrollments', {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          course: courseDocumentId,
+        },
+      }),
     });
   },
 };

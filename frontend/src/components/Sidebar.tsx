@@ -146,13 +146,20 @@ export default function Sidebar() {
     >
       {/* Brand Header */}
       <Link
-        href="/dashboard"
+        href="/"
+        title="Go to Home"
+        onClick={(e) => {
+          if (typeof window !== 'undefined' && window.location.pathname === '/') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
           padding: '6px 8px 20px',
           textDecoration: 'none',
+          cursor: 'pointer',
         }}
       >
         <div
@@ -230,7 +237,7 @@ export default function Sidebar() {
           fontSize: '10.5px',
           fontWeight: 700,
           color: 'var(--ink-faint)',
-          textTransform: 'uppercase',
+          textTransform: 'none',
           letterSpacing: '0.06em',
           padding: '6px 10px 6px',
         }}
@@ -350,7 +357,7 @@ export default function Sidebar() {
                 backgroundColor: roleConfig.softColor,
                 color: roleConfig.color,
                 marginTop: '1px',
-                textTransform: 'uppercase',
+                textTransform: 'none',
                 letterSpacing: '0.03em',
               }}
             >

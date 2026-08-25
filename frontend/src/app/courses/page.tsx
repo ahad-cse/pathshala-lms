@@ -338,7 +338,7 @@ export default function CoursesPage() {
                             padding: '3px 8px',
                             borderRadius: '6px',
                             backgroundColor: 'rgba(0, 0, 0, 0.25)',
-                            textTransform: 'uppercase',
+                            textTransform: 'none',
                             letterSpacing: '0.04em',
                           }}
                         >

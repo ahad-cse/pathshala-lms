@@ -10,7 +10,7 @@ import dynamic from 'next/dynamic';
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
   ssr: false,
-  loading: () => <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ink-faint)' }}>Loading WYSIWYG Editor...</div>,
+  loading: () => <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ink-faint)' }}>Loading Rich-Text Editor...</div>,
 });
 
 export default function BlogPage() {
@@ -342,7 +342,7 @@ export default function BlogPage() {
                       color: '#FFFFFF',
                       fontSize: '11px',
                       fontWeight: 800,
-                      textTransform: 'uppercase',
+                      textTransform: 'none',
                       letterSpacing: '0.04em',
                     }}
                   >

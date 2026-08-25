@@ -25,24 +25,40 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--canvas)', display: 'flex', flexDirection: 'column' }}>
-      {/* Header / Navbar */}
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--canvas)', display: 'flex', flexDirection: 'column', paddingTop: '70px' }}>
+      {/* Header / Navbar (Fixed Pinned Glassmorphic) */}
       <header
         style={{
           height: '70px',
-          backgroundColor: 'var(--surface)',
+          backgroundColor: 'rgba(255, 255, 255, 0.94)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 36px',
-          position: 'sticky',
+          position: 'fixed',
           top: 0,
-          zIndex: 30,
+          left: 0,
+          right: 0,
+          width: '100%',
+          boxSizing: 'border-box',
+          zIndex: 999,
+          boxShadow: '0 1px 6px rgba(0, 0, 0, 0.04)',
         }}
       >
         {/* Brand */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+        <Link
+          href="/"
+          title="PathShala Home"
+          onClick={(e) => {
+            if (typeof window !== 'undefined') {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', cursor: 'pointer' }}
+        >
           <div
             style={{
               width: '36px',
@@ -330,7 +346,7 @@ export default function HomePage() {
                     color: conf.color,
                     fontSize: '11px',
                     fontWeight: 700,
-                    textTransform: 'uppercase',
+                    textTransform: 'none',
                     marginBottom: '12px',
                   }}
                 >

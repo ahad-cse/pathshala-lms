@@ -419,7 +419,7 @@ export default function StudentQuizPage({ params }: PageProps) {
                       >
                         {qIdx + 1}
                       </span>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
                         Question {qIdx + 1}
                       </span>
                     </div>

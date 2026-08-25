@@ -141,7 +141,7 @@ export default function AdminPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
                   Total Users
                 </span>
                 <span style={{ fontSize: '18px' }}>👥</span>
@@ -178,7 +178,7 @@ export default function AdminPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
                   Curriculum Library
                 </span>
                 <span style={{ fontSize: '18px' }}>📚</span>
@@ -204,7 +204,7 @@ export default function AdminPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
                   Student Enrollments
                 </span>
                 <span style={{ fontSize: '18px' }}>🎓</span>
@@ -230,7 +230,7 @@ export default function AdminPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
                   Evaluations & Quizzes
                 </span>
                 <span style={{ fontSize: '18px' }}>📝</span>
@@ -328,7 +328,7 @@ export default function AdminPage() {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                   <thead>
-                    <tr style={{ backgroundColor: 'var(--canvas)', borderBottom: '1px solid var(--border)', color: 'var(--ink-faint)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <tr style={{ backgroundColor: 'var(--canvas)', borderBottom: '1px solid var(--border)', color: 'var(--ink-faint)', fontSize: '11.5px', textTransform: 'none', letterSpacing: '0.04em' }}>
                       <th style={{ padding: '12px 24px', fontWeight: 700 }}>User Identity</th>
                       <th style={{ padding: '12px 20px', fontWeight: 700 }}>Email Address</th>
                       <th style={{ padding: '12px 20px', fontWeight: 700 }}>Current Role</th>

@@ -111,7 +111,7 @@ export default function LessonModal({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '2px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', textTransform: 'none', marginBottom: '2px' }}>
               Course: {targetCourse.title}
             </div>
             <h2 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>

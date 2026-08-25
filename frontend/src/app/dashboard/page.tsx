@@ -57,7 +57,7 @@ export default function DashboardPage() {
                   color: roleConfig.color,
                   fontSize: '11px',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
+                  textTransform: 'none',
                   letterSpacing: '0.04em',
                   marginBottom: '10px',
                 }}
@@ -159,7 +159,7 @@ export default function DashboardPage() {
             {currentRole === 'student' && (
               <>
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Enrolled Courses
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Completed Lessons
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Learning Streak
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
             {currentRole === 'instructor' && (
               <>
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     My Created Courses
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-instructor)', fontFamily: 'var(--font-display)' }}>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Total Lessons Authored
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Active Students
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
@@ -239,7 +239,7 @@ export default function DashboardPage() {
             {currentRole === 'content_manager' && (
               <>
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Platform Courses
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-content)', fontFamily: 'var(--font-display)' }}>
@@ -251,7 +251,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Blog Articles
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Pending Reviews
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
             {currentRole === 'admin' && (
               <>
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Total Registered Users
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-admin)', fontFamily: 'var(--font-display)' }}>
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Backend Security
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-display)' }}>
@@ -303,7 +303,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Role Management
                   </div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>

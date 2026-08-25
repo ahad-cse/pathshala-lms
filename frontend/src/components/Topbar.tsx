@@ -36,7 +36,9 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
     <header
       style={{
         height: '64px',
-        backgroundColor: 'var(--surface)',
+        backgroundColor: 'rgba(255, 255, 255, 0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid var(--border)',
         display: 'flex',
         alignItems: 'center',
@@ -44,7 +46,8 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
         padding: '0 24px',
         position: 'sticky',
         top: 0,
-        zIndex: 10,
+        zIndex: 40,
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
       }}
     >
       {/* Title / Breadcrumb */}
@@ -137,7 +140,7 @@ export default function Topbar({ title = 'Dashboard', subtitle }: TopbarProps) {
                   fontSize: '11px',
                   fontWeight: 700,
                   color: 'var(--ink-faint)',
-                  textTransform: 'uppercase',
+                  textTransform: 'none',
                   padding: '6px 10px 4px',
                   letterSpacing: '0.04em',
                 }}

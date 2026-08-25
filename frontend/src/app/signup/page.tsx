@@ -66,28 +66,31 @@ export default function SignupPage() {
       >
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              backgroundColor: 'var(--primary)',
-              color: '#FFFFFF',
-              fontWeight: 800,
-              fontSize: '22px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-display)',
-              marginBottom: '12px',
-              boxShadow: '0 4px 12px rgba(242, 102, 42, 0.35)',
-            }}
-          >
-            P
-          </div>
-          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
-            Create Student Account
-          </h1>
+          <Link href="/" title="Go to Home" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--primary)',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: '22px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'var(--font-display)',
+                marginBottom: '12px',
+                boxShadow: '0 4px 12px rgba(242, 102, 42, 0.35)',
+                cursor: 'pointer',
+              }}
+            >
+              P
+            </div>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px', cursor: 'pointer' }}>
+              Create Student Account
+            </h1>
+          </Link>
           <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
             Join PathShala to enroll in interactive courses and track your progress
           </p>

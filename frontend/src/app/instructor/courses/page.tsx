@@ -153,7 +153,7 @@ export default function InstructorCoursesPage() {
                   color: 'var(--role-instructor)',
                   fontSize: '11px',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
+                  textTransform: 'none',
                   marginBottom: '8px',
                 }}
               >
@@ -277,7 +277,7 @@ export default function InstructorCoursesPage() {
                                 backgroundColor: 'var(--canvas)',
                                 border: '1px solid var(--border-soft)',
                                 color: 'var(--ink-soft)',
-                                textTransform: 'uppercase',
+                                textTransform: 'none',
                               }}
                             >
                               {course.category}
@@ -361,7 +361,7 @@ export default function InstructorCoursesPage() {
                         padding: '14px',
                       }}
                     >
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '10px' }}>
                         Curriculum Lessons
                       </div>
 

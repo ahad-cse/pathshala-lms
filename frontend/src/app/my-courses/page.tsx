@@ -95,7 +95,7 @@ export default function MyCoursesPage() {
                   color: 'var(--role-student)',
                   fontSize: '11px',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
+                  textTransform: 'none',
                   marginBottom: '8px',
                 }}
               >
@@ -220,7 +220,7 @@ export default function MyCoursesPage() {
                           padding: '3px 8px',
                           borderRadius: '6px',
                           backgroundColor: 'rgba(0, 0, 0, 0.25)',
-                          textTransform: 'uppercase',
+                          textTransform: 'none',
                           letterSpacing: '0.04em',
                           alignSelf: 'flex-start',
                         }}

@@ -1,0 +1,101 @@
+:root {
+  /* Base Colors */
+  --ink: #0F172A;
+  --ink-soft: #667085;
+  --ink-faint: #98A2B3;
+  --canvas: #F7F8FA;
+  --surface: #FFFFFF;
+  --border: #E5E7EB;
+  --border-soft: #F0F1F3;
+
+  /* Brand Colors */
+  --primary: #F2662A;
+  --primary-dark: #D9531D;
+  --primary-soft: #FDECE3;
+
+  /* Secondary / Dark CTA */
+  --dark-cta: #10131A;
+  --dark-cta-hover: #000000;
+
+  /* Role Accents */
+  --role-admin: #4F46E5;
+  --role-admin-soft: rgba(79, 70, 229, 0.12);
+  --role-content: #0D9488;
+  --role-content-soft: rgba(13, 148, 136, 0.12);
+  --role-instructor: #B45309;
+  --role-instructor-soft: rgba(180, 83, 9, 0.12);
+  --role-student: #E11D48;
+  --role-student-soft: rgba(225, 29, 72, 0.12);
+
+  /* Semantic */
+  --success: #16A34A;
+  --success-soft: #E7F8ED;
+  --warning: #B45309;
+  --warning-soft: #FEF3E2;
+  --danger: #DC2626;
+  --danger-soft: #FDEAEA;
+
+  /* Data viz / progress */
+  --progress-track: #EDEEF1;
+  --progress-fill: #F2662A;
+
+  /* Typography */
+  --font-display: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
+  --font-body: var(--font-inter), 'Inter', sans-serif;
+  --font-mono: var(--font-jetbrains), 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  min-height: 100vh;
+  background-color: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 20px;
+  line-height: 28px;
+}
+
+h3 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+p {
+  color: var(--ink-soft);
+  line-height: 22px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}

@@ -31,6 +31,24 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Plugin =>
       },
     },
   },
+  documentation: {
+    enabled: true,
+    config: {
+      openapi: '3.0.0',
+      info: {
+        version: '1.0.0',
+        title: 'PathShala LMS REST API',
+        description: 'Interactive OpenAPI / Swagger Documentation for PathShala LMS endpoints',
+        contact: {
+          name: 'PathShala Support',
+          email: 'admin@demo.com',
+        },
+      },
+      'x-strapi-config': {
+        plugins: ['users-permissions', 'upload'],
+      },
+    },
+  },
 });
 
 export default config;

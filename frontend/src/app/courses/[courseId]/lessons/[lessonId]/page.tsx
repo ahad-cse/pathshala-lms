@@ -3,8 +3,8 @@
 import React, { useEffect, useState, useCallback, use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi, progressApi } from '@/lib/api';
-import { Course, CourseProgress, Lesson } from '@/types/content';
+import { courseApi, lessonApi, progressApi, quizApi } from '@/lib/api';
+import { Course, CourseProgress, Lesson, Quiz } from '@/types/content';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -24,6 +24,7 @@ export default function LessonViewerPage({ params }: PageProps) {
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [togglingProgress, setTogglingProgress] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -31,7 +32,7 @@ export default function LessonViewerPage({ params }: PageProps) {
   const loadLessonData = useCallback(async () => {
     try {
       setLoading(true);
-      const [courseRes, lessonRes, progressRes] = await Promise.all([
+      const [courseRes, lessonRes, progressRes, quizRes] = await Promise.all([
         courseApi.getOne(courseId),
         lessonApi.getOne(lessonId),
         progressApi.getCourseProgress(courseId).catch(() => ({
@@ -43,11 +44,13 @@ export default function LessonViewerPage({ params }: PageProps) {
             completedLessonIds: [],
           },
         })),
+        quizApi.getByCourse(courseId).catch(() => ({ data: [] })),
       ]);
 
       setCourse(courseRes.data);
       setCurrentLesson(lessonRes.data);
       setProgress(progressRes.data);
+      setQuizzes(quizRes.data || []);
     } catch (err) {
       console.error('Failed to load lesson data:', err);
     } finally {
@@ -252,6 +255,38 @@ export default function LessonViewerPage({ params }: PageProps) {
                 );
               })}
             </div>
+
+            {/* Assessment Quiz Link in Sidebar */}
+            {quizzes.length > 0 && (
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-soft)' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', marginBottom: '8px', paddingLeft: '8px' }}>
+                  Course Assessment
+                </div>
+                {quizzes.map((q) => (
+                  <Link
+                    key={q.documentId}
+                    href={`/courses/${courseId}/quiz/${q.documentId}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--warning-soft)',
+                      color: 'var(--warning)',
+                      textDecoration: 'none',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                    }}
+                  >
+                    <span>🎯</span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {q.title}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -522,6 +557,25 @@ export default function LessonViewerPage({ params }: PageProps) {
                     >
                       <span>Next: {nextLesson.title}</span>
                       <span>→</span>
+                    </Link>
+                  ) : quizzes.length > 0 ? (
+                    <Link
+                      href={`/courses/${courseId}/quiz/${quizzes[0].documentId}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--warning)',
+                        color: '#FFFFFF',
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)',
+                      }}
+                    >
+                      <span>🎯 Take Course MCQ Quiz →</span>
                     </Link>
                   ) : (
                     <Link

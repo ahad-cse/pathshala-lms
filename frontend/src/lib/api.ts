@@ -1,5 +1,16 @@
 import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
-import { Course, CourseFormData, CourseProgress, Enrollment, Lesson, LessonFormData } from '@/types/content';
+import {
+  Course,
+  CourseFormData,
+  CourseProgress,
+  Enrollment,
+  Lesson,
+  LessonFormData,
+  Quiz,
+  QuizEvaluationResult,
+  QuizFormData,
+  QuizSubmission,
+} from '@/types/content';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
@@ -238,6 +249,71 @@ export const progressApi = {
 
   async getCourseProgress(courseId: string): Promise<{ data: CourseProgress }> {
     return apiFetch<{ data: CourseProgress }>(`/api/progress/course/${courseId}`, {
+      method: 'GET',
+    });
+  },
+};
+
+/**
+ * Quiz & Auto-Grading API Service
+ */
+export const quizApi = {
+  async getAll(): Promise<{ data: Quiz[] }> {
+    return apiFetch<{ data: Quiz[] }>('/api/quizzes', {
+      method: 'GET',
+    });
+  },
+
+  async getOne(documentId: string): Promise<{ data: Quiz }> {
+    return apiFetch<{ data: Quiz }>(`/api/quizzes/${documentId}`, {
+      method: 'GET',
+    });
+  },
+
+  async getByCourse(courseDocumentId: string): Promise<{ data: Quiz[] }> {
+    return apiFetch<{ data: Quiz[] }>(`/api/quizzes/course/${courseDocumentId}`, {
+      method: 'GET',
+    });
+  },
+
+  async create(data: QuizFormData): Promise<{ data: Quiz }> {
+    return apiFetch<{ data: Quiz }>('/api/quizzes', {
+      method: 'POST',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async update(documentId: string, data: Partial<QuizFormData>): Promise<{ data: Quiz }> {
+    return apiFetch<{ data: Quiz }>(`/api/quizzes/${documentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ data }),
+    });
+  },
+
+  async delete(documentId: string): Promise<void> {
+    return apiFetch<void>(`/api/quizzes/${documentId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async submit(quizDocumentId: string, answers: Record<string | number, number>): Promise<{ data: QuizEvaluationResult }> {
+    return apiFetch<{ data: QuizEvaluationResult }>(`/api/quizzes/${quizDocumentId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({
+        data: {
+          answers,
+        },
+      }),
+    });
+  },
+};
+
+/**
+ * Quiz Submission Historic Results API Service
+ */
+export const quizSubmissionApi = {
+  async getMySubmissions(): Promise<{ data: QuizSubmission[] }> {
+    return apiFetch<{ data: QuizSubmission[] }>('/api/quiz-submissions', {
       method: 'GET',
     });
   },

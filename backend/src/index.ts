@@ -47,6 +47,23 @@ export default {
         'api::progress.progress.getCourseProgress',
       ];
 
+      const quizActions = [
+        'api::quiz.quiz.find',
+        'api::quiz.quiz.findOne',
+        'api::quiz.quiz.create',
+        'api::quiz.quiz.update',
+        'api::quiz.quiz.delete',
+        'api::quiz.quiz.submitQuiz',
+        'api::quiz.quiz.getByCourse',
+      ];
+
+      const quizSubmissionActions = [
+        'api::quiz-submission.quiz-submission.find',
+        'api::quiz-submission.quiz-submission.findOne',
+        'api::quiz-submission.quiz-submission.create',
+        'api::quiz-submission.quiz-submission.delete',
+      ];
+
       const authTestActions = [
         'api::auth-test.auth-test.adminOnly',
         'api::auth-test.auth-test.contentManagerOnly',
@@ -68,6 +85,8 @@ export default {
           ...lessonActions,
           ...enrollmentActions,
           ...progressActions,
+          ...quizActions,
+          ...quizSubmissionActions,
         ];
 
         for (const action of allAuthActions) {
@@ -330,9 +349,73 @@ export default {
             );
           }
         }
+
+        // Seed Sample Quiz for Course 1 if none exists
+        if (course1) {
+          const existingQuiz = await strapi.db
+            .query('api::quiz.quiz')
+            .findOne({
+              where: {
+                course: course1.id,
+              },
+            });
+
+          if (!existingQuiz) {
+            const courseDoc = (course1 as any).documentId;
+
+            await strapi.documents('api::quiz.quiz').create({
+              data: {
+                title: 'Next.js & TypeScript Mastery Quiz',
+                description: 'Test your understanding of Next.js 15 App Router, Server Components, and Type-safe API architecture.',
+                passing_score: 70,
+                course: courseDoc || course1.id,
+                questions: [
+                  {
+                    id: 'q1',
+                    question: 'Which directory structure is used by Next.js 15 App Router for routing?',
+                    options: [
+                      'pages/ directory',
+                      'app/ directory',
+                      'routes/ directory',
+                      'src/controllers/ directory'
+                    ],
+                    correct_option_index: 1,
+                    explanation: 'Next.js App Router uses the app/ directory with nested folders and page.tsx files.'
+                  },
+                  {
+                    id: 'q2',
+                    question: 'Where should access control and role-based permissions strictly be enforced?',
+                    options: [
+                      'Frontend UI only (hiding buttons)',
+                      'Browser localStorage checks',
+                      'Backend policies & custom controllers',
+                      'CSS display:none rules'
+                    ],
+                    correct_option_index: 2,
+                    explanation: 'Security boundaries must always be enforced on the backend via policies and controller guards.'
+                  },
+                  {
+                    id: 'q3',
+                    question: 'What is the default rendering mode of components inside the app/ directory?',
+                    options: [
+                      'Client Components',
+                      'React Server Components (RSC)',
+                      'Static HTML exports only',
+                      'WebSockets streams'
+                    ],
+                    correct_option_index: 1,
+                    explanation: 'By default, all components inside the app directory are React Server Components unless annotated with "use client".'
+                  }
+                ],
+              },
+            });
+
+            strapi.log.info('[SEED] Created Demo Quiz for Course 1');
+          }
+        }
       }
     } catch (err) {
-      strapi.log.error('[BOOTSTRAP] Error during role, course & enrollment bootstrap:', err);
+      strapi.log.error('[BOOTSTRAP] Error during role, course, enrollment & quiz bootstrap:', err);
     }
   },
 };

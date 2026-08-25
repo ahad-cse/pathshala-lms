@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quiz_submissions",
+  "info": {
+    "singularName": "quiz-submission",
+    "pluralName": "quiz-submissions",
+    "displayName": "Quiz Submission",
+    "description": "Graded Student Quiz Submission Record"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "quiz_submissions"
+    },
+    "quiz": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::quiz.quiz",
+      "inversedBy": "submissions"
+    },
+    "score": {
+      "type": "integer",
+      "required": true
+    },
+    "passed": {
+      "type": "boolean",
+      "required": true
+    },
+    "answers": {
+      "type": "json"
+    },
+    "submitted_at": {
+      "type": "datetime"
+    }
+  }
+}

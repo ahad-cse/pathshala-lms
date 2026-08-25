@@ -479,6 +479,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    quizzes: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -582,6 +583,78 @@ export interface ApiProgressProgress extends Struct.CollectionTypeSchema {
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiQuizSubmissionQuizSubmission
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'quiz_submissions';
+  info: {
+    description: 'Graded Student Quiz Submission Record';
+    displayName: 'Quiz Submission';
+    pluralName: 'quiz-submissions';
+    singularName: 'quiz-submission';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    answers: Schema.Attribute.JSON;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::quiz-submission.quiz-submission'
+    > &
+      Schema.Attribute.Private;
+    passed: Schema.Attribute.Boolean & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    quiz: Schema.Attribute.Relation<'manyToOne', 'api::quiz.quiz'>;
+    score: Schema.Attribute.Integer & Schema.Attribute.Required;
+    student: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    submitted_at: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiQuizQuiz extends Struct.CollectionTypeSchema {
+  collectionName: 'quizzes';
+  info: {
+    description: 'MCQ Course Quiz';
+    displayName: 'Quiz';
+    pluralName: 'quizzes';
+    singularName: 'quiz';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    course: Schema.Attribute.Relation<'manyToOne', 'api::course.course'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::quiz.quiz'> &
+      Schema.Attribute.Private;
+    passing_score: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<70>;
+    publishedAt: Schema.Attribute.DateTime;
+    questions: Schema.Attribute.JSON & Schema.Attribute.Required;
+    submissions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::quiz-submission.quiz-submission'
+    >;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1036,7 +1109,7 @@ export interface PluginUsersPermissionsUser
   extends Struct.CollectionTypeSchema {
   collectionName: 'up_users';
   info: {
-    description: 'Extended user model with LMS role_type, courses, enrollments, and progresses';
+    description: 'Extended user model with LMS role_type, courses, enrollments, progresses, and quiz_submissions';
     displayName: 'User';
     name: 'user';
     pluralName: 'users';
@@ -1080,6 +1153,10 @@ export interface PluginUsersPermissionsUser
     >;
     provider: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
+    quiz_submissions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::quiz-submission.quiz-submission'
+    >;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
     role: Schema.Attribute.Relation<
       'manyToOne',
@@ -1117,6 +1194,8 @@ declare module '@strapi/strapi' {
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::lesson.lesson': ApiLessonLesson;
       'api::progress.progress': ApiProgressProgress;
+      'api::quiz-submission.quiz-submission': ApiQuizSubmissionQuizSubmission;
+      'api::quiz.quiz': ApiQuizQuiz;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

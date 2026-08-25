@@ -4,6 +4,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Server =>
   host: env('HOST', '0.0.0.0'),
   port: env.int('PORT', 1337),
   url: env('PUBLIC_URL', env('URL', undefined)),
+  proxy: true,
   app: {
     keys: env.array('APP_KEYS', [
       'pathshala_app_key_1_random_32chars_long_key_a',

@@ -891,7 +891,7 @@ export interface PluginUsersPermissionsUser
   extends Struct.CollectionTypeSchema {
   collectionName: 'up_users';
   info: {
-    description: '';
+    description: 'Extended user model with LMS role_type';
     displayName: 'User';
     name: 'user';
     pluralName: 'users';
@@ -931,6 +931,11 @@ export interface PluginUsersPermissionsUser
       'manyToOne',
       'plugin::users-permissions.role'
     >;
+    role_type: Schema.Attribute.Enumeration<
+      ['admin', 'content_manager', 'instructor', 'student']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'student'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

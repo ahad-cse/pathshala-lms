@@ -136,8 +136,9 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
       return ctx.unauthorized('You must be logged in to take and submit a quiz.');
     }
 
-    if (user.role_type !== 'student' && user.role_type !== 'admin') {
-      return ctx.forbidden('Only students can submit quizzes for evaluation.');
+    // Strictly enforce Permission Matrix: "Take quizzes" is Student ONLY
+    if (user.role_type !== 'student') {
+      return ctx.forbidden('Access denied: Only students are permitted to take and submit quizzes per the Permission Matrix.');
     }
 
     const { answers } = ctx.request.body?.data || {};

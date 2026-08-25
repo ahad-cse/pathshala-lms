@@ -122,6 +122,31 @@ export default function StudentQuizPage({ params }: PageProps) {
             )}
           </div>
 
+          {/* Author Preview Mode Banner */}
+          {user?.role_type && user.role_type !== 'student' && (
+            <div
+              style={{
+                backgroundColor: 'var(--role-instructor-soft)',
+                color: 'var(--role-instructor)',
+                border: '1px solid rgba(180, 83, 9, 0.25)',
+                borderRadius: '10px',
+                padding: '12px 18px',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+              }}
+            >
+              <span>🔍 <strong>Author Preview Mode ({user.role_type.replace('_', ' ').toUpperCase()})</strong>: You are previewing and testing the interactive student quiz flow.</span>
+              <Link href="/instructor/quizzes" style={{ color: 'var(--role-instructor)', fontWeight: 700, textDecoration: 'underline' }}>
+                ← Return to Quiz Studio
+              </Link>
+            </div>
+          )}
+
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
               Loading assessment questions...
@@ -463,24 +488,46 @@ export default function StudentQuizPage({ params }: PageProps) {
                   Ready to evaluate? Score will be graded instantly server-side.
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{
-                    padding: '12px 28px',
-                    borderRadius: '9px',
-                    backgroundColor: 'var(--primary)',
-                    color: '#FFFFFF',
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    opacity: submitting ? 0.7 : 1,
-                    border: 'none',
-                    boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
-                  }}
-                >
-                  {submitting ? 'Auto-Grading Answers...' : 'Submit Quiz for Evaluation →'}
-                </button>
+                {user?.role_type === 'student' ? (
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{
+                      padding: '12px 28px',
+                      borderRadius: '9px',
+                      backgroundColor: 'var(--primary)',
+                      color: '#FFFFFF',
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      opacity: submitting ? 0.7 : 1,
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
+                    }}
+                  >
+                    {submitting ? 'Auto-Grading Answers...' : 'Submit Quiz for Evaluation →'}
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '12.5px', color: 'var(--ink-faint)', fontWeight: 600 }}>
+                      🔒 Author Preview: Submission is reserved for Students.
+                    </span>
+                    <Link
+                      href="/instructor/quizzes"
+                      style={{
+                        padding: '10px 18px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--role-instructor)',
+                        color: '#FFFFFF',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Return to Quiz Studio
+                    </Link>
+                  </div>
+                )}
               </div>
             </form>
           )}

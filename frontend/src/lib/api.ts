@@ -1,5 +1,7 @@
 import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '@/types/auth';
 import {
+  AdminStats,
+  AdminUser,
   Course,
   CourseFormData,
   CourseProgress,
@@ -315,6 +317,36 @@ export const quizSubmissionApi = {
   async getMySubmissions(): Promise<{ data: QuizSubmission[] }> {
     return apiFetch<{ data: QuizSubmission[] }>('/api/quiz-submissions', {
       method: 'GET',
+    });
+  },
+};
+
+/**
+ * Admin Panel & User Role Management API Service
+ */
+export const adminApi = {
+  async getStats(): Promise<{ data: AdminStats }> {
+    return apiFetch<{ data: AdminStats }>('/api/admin-dashboard/stats', {
+      method: 'GET',
+    });
+  },
+
+  async getUsers(): Promise<{ data: AdminUser[] }> {
+    return apiFetch<{ data: AdminUser[] }>('/api/admin-dashboard/users', {
+      method: 'GET',
+    });
+  },
+
+  async updateUserRole(userId: number | string, role_type: string): Promise<{ data: AdminUser }> {
+    return apiFetch<{ data: AdminUser }>(`/api/admin-dashboard/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role_type }),
+    });
+  },
+
+  async deleteUser(userId: number | string): Promise<{ data: { message: string } }> {
+    return apiFetch<{ data: { message: string } }>(`/api/admin-dashboard/users/${userId}`, {
+      method: 'DELETE',
     });
   },
 };

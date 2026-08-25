@@ -100,6 +100,32 @@ export interface CourseProgress {
   completedLessonIds: string[];
 }
 
+export interface AdminStats {
+  totalUsers: number;
+  usersByRole: {
+    admin: number;
+    content_manager: number;
+    instructor: number;
+    student: number;
+  };
+  totalCourses: number;
+  totalLessons: number;
+  totalEnrollments: number;
+  totalQuizzes: number;
+  totalSubmissions: number;
+}
+
+export interface AdminUser {
+  id: number;
+  documentId?: string;
+  username: string;
+  email: string;
+  role_type: 'admin' | 'content_manager' | 'instructor' | 'student';
+  createdAt: string;
+  confirmed?: boolean;
+  blocked?: boolean;
+}
+
 export interface CourseFormData {
   title: string;
   description: string;

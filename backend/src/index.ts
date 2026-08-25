@@ -64,6 +64,13 @@ export default {
         'api::quiz-submission.quiz-submission.delete',
       ];
 
+      const adminDashboardActions = [
+        'api::admin-dashboard.admin-dashboard.getStats',
+        'api::admin-dashboard.admin-dashboard.getUsers',
+        'api::admin-dashboard.admin-dashboard.updateUserRole',
+        'api::admin-dashboard.admin-dashboard.deleteUser',
+      ];
+
       const authTestActions = [
         'api::auth-test.auth-test.adminOnly',
         'api::auth-test.auth-test.contentManagerOnly',
@@ -87,6 +94,7 @@ export default {
           ...progressActions,
           ...quizActions,
           ...quizSubmissionActions,
+          ...adminDashboardActions,
         ];
 
         for (const action of allAuthActions) {

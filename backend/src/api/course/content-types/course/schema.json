@@ -28,6 +28,9 @@
       "type": "string",
       "default": "#F2662A"
     },
+    "cover_image_url": {
+      "type": "string"
+    },
     "instructor": {
       "type": "relation",
       "relation": "manyToOne",

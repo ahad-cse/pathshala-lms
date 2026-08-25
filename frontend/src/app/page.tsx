@@ -714,43 +714,73 @@ export default function HomePage() {
                     e.currentTarget.style.borderColor = 'var(--border)';
                   }}
                 >
-                  {/* Rich Educational Course Banner with Gradient & Badges */}
+                  {/* Rich Educational Course Banner with Cover Image / Gradient */}
                   <div
                     style={{
-                      height: '96px',
+                      height: '110px',
                       background: `linear-gradient(135deg, ${course.cover_color || 'var(--primary)'} 0%, #0F172A 100%)`,
-                      padding: '14px 16px',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
+                      position: 'relative',
+                      overflow: 'hidden',
                     }}
                   >
-                    <span
+                    {course.cover_image_url && (
+                      <img
+                        src={course.cover_image_url}
+                        alt={course.title}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    )}
+                    {/* Overlay badge container */}
+                    <div
                       style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '3px 10px',
-                        borderRadius: '99px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        color: 'var(--ink)',
-                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: course.cover_image_url
+                          ? 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)'
+                          : 'transparent',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
                       }}
                     >
-                      {course.category || 'Course'}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '3px 10px',
-                        borderRadius: '99px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.45)',
-                        color: '#FFFFFF',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      {lessonCount} {lessonCount === 1 ? 'Lesson' : 'Lessons'}
-                    </span>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '3px 10px',
+                          borderRadius: '99px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          color: 'var(--ink)',
+                          boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                        }}
+                      >
+                        {course.category || 'Course'}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '3px 10px',
+                          borderRadius: '99px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                          color: '#FFFFFF',
+                          backdropFilter: 'blur(4px)',
+                        }}
+                      >
+                        {lessonCount} {lessonCount === 1 ? 'Lesson' : 'Lessons'}
+                      </span>
+                    </div>
                   </div>
 
                   <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>

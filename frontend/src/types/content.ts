@@ -74,6 +74,7 @@ export interface Course {
   description: string;
   category: string;
   cover_color: string;
+  cover_image_url?: string;
   instructor?: User;
   lessons?: Lesson[];
   enrollments?: Enrollment[];
@@ -155,6 +156,7 @@ export interface CourseFormData {
   description: string;
   category: string;
   cover_color: string;
+  cover_image_url?: string;
   instructor?: string | number;
 }
 

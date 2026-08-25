@@ -204,33 +204,62 @@ export default function MyCoursesPage() {
                     {/* Course Banner */}
                     <div
                       style={{
-                        height: '110px',
-                        backgroundColor: course.cover_color || 'var(--primary)',
-                        padding: '16px 20px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
+                        height: '120px',
+                        background: `linear-gradient(135deg, ${course.cover_color || 'var(--primary)'} 0%, #0F172A 100%)`,
+                        position: 'relative',
+                        overflow: 'hidden',
                         color: '#FFFFFF',
                       }}
                     >
-                      <span
+                      {course.cover_image_url && (
+                        <img
+                          src={course.cover_image_url}
+                          alt={course.title}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      )}
+                      <div
                         style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.25)',
-                          textTransform: 'none',
-                          letterSpacing: '0.04em',
-                          alignSelf: 'flex-start',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: course.cover_image_url
+                            ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.75) 100%)'
+                            : 'transparent',
+                          padding: '16px 20px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        {course.category}
-                      </span>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                            textTransform: 'none',
+                            letterSpacing: '0.04em',
+                            alignSelf: 'flex-start',
+                          }}
+                        >
+                          {course.category}
+                        </span>
 
-                      <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#FFFFFF', lineHeight: 1.25 }}>
-                        {course.title}
-                      </h3>
+                        <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#FFFFFF', lineHeight: 1.25 }}>
+                          {course.title}
+                        </h3>
+                      </div>
                     </div>
 
                     {/* Body */}

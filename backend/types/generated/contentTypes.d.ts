@@ -500,6 +500,7 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<'Web Development'>;
     cover_color: Schema.Attribute.String &
       Schema.Attribute.DefaultTo<'#F2662A'>;
+    cover_image_url: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

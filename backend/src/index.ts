@@ -270,6 +270,7 @@ export default {
                 'Master modern full-stack development with Next.js 15 App Router, TypeScript, and Strapi CMS.',
               category: 'Web Development',
               cover_color: '#F2662A',
+              cover_image_url: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80',
               instructor: instructorA.id,
             },
           });
@@ -310,10 +311,13 @@ export default {
           course1 = createdCourse1 as any;
           strapi.log.info('[SEED] Created Course 1 with 3 lessons for instructor@demo.com');
         } else if (course1 && instructorA) {
-          // Link instructor if missing
+          // Link instructor & update cover_image_url if missing
           await strapi.db.query('api::course.course').update({
             where: { id: course1.id },
-            data: { instructor: instructorA.id },
+            data: {
+              instructor: instructorA.id,
+              cover_image_url: (course1 as any).cover_image_url || 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=80',
+            },
           });
         }
 
@@ -329,6 +333,7 @@ export default {
                 'Comprehensive foundations in computer science, algorithm complexity, graphs, and dynamic programming.',
               category: 'Computer Science',
               cover_color: '#4F46E5',
+              cover_image_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop&q=80',
               instructor: contentMgr.id,
             },
           });
@@ -359,7 +364,10 @@ export default {
         } else if (existingCourse2 && contentMgr) {
           await strapi.db.query('api::course.course').update({
             where: { id: existingCourse2.id },
-            data: { instructor: contentMgr.id },
+            data: {
+              instructor: contentMgr.id,
+              cover_image_url: (existingCourse2 as any).cover_image_url || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop&q=80',
+            },
           });
         }
 

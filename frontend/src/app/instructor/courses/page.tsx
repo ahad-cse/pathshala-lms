@@ -261,9 +261,18 @@ export default function InstructorCoursesPage() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
+                            overflow: 'hidden',
                           }}
                         >
-                          {course.title.charAt(0).toUpperCase()}
+                          {course.cover_image_url ? (
+                            <img
+                              src={course.cover_image_url}
+                              alt={course.title}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            course.title.charAt(0).toUpperCase()
+                          )}
                         </div>
 
                         <div>

@@ -37,6 +37,7 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [coverColor, setCoverColor] = useState(COLOR_PRESETS[0].value);
+  const [coverImageUrl, setCoverImageUrl] = useState('');
   const [instructorId, setInstructorId] = useState<string>('');
   const [instructorsList, setInstructorsList] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -303,6 +304,45 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
               </select>
             </div>
           )}
+
+          {/* Cover Image URL */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink)' }}>
+                Course Cover Image URL (Optional)
+              </label>
+              {coverImageUrl && (
+                <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 600 }}>Image Linked</span>
+              )}
+            </div>
+            <input
+              type="url"
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+              placeholder="https://images.unsplash.com/... (Direct Image Link)"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)',
+                fontSize: '13.5px',
+                color: 'var(--ink)',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            {coverImageUrl && (
+              <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', height: '80px', border: '1px solid var(--border)', position: 'relative' }}>
+                <img
+                  src={coverImageUrl}
+                  alt="Cover Preview"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Description */}
           <div>

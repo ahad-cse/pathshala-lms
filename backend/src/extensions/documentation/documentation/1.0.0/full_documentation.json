@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-08-25T19:03:09.838Z"
+    "x-generation-date": "2026-08-25T19:36:30.387Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6216,6 +6216,9 @@
                     "cover_color": {
                       "type": "string"
                     },
+                    "cover_image_url": {
+                      "type": "string"
+                    },
                     "instructor": {
                       "type": "object",
                       "properties": {
@@ -7336,6 +7339,9 @@
               "cover_color": {
                 "type": "string"
               },
+              "cover_image_url": {
+                "type": "string"
+              },
               "instructor": {
                 "oneOf": [
                   {
@@ -7475,6 +7481,9 @@
             "type": "string"
           },
           "cover_color": {
+            "type": "string"
+          },
+          "cover_image_url": {
             "type": "string"
           },
           "instructor": {
@@ -8443,6 +8452,9 @@
                       "type": "string"
                     },
                     "cover_color": {
+                      "type": "string"
+                    },
+                    "cover_image_url": {
                       "type": "string"
                     },
                     "instructor": {
@@ -10678,6 +10690,9 @@
                     "cover_color": {
                       "type": "string"
                     },
+                    "cover_image_url": {
+                      "type": "string"
+                    },
                     "instructor": {
                       "type": "object",
                       "properties": {
@@ -11945,6 +11960,9 @@
                 "type": "string"
               },
               "cover_color": {
+                "type": "string"
+              },
+              "cover_image_url": {
                 "type": "string"
               },
               "instructor": {
@@ -15068,6 +15086,9 @@
                     "cover_color": {
                       "type": "string"
                     },
+                    "cover_image_url": {
+                      "type": "string"
+                    },
                     "instructor": {
                       "type": "object",
                       "properties": {
@@ -16363,6 +16384,9 @@
                 "type": "string"
               },
               "cover_color": {
+                "type": "string"
+              },
+              "cover_image_url": {
                 "type": "string"
               },
               "instructor": {
@@ -19509,6 +19533,9 @@
                       "type": "string"
                     },
                     "cover_color": {
+                      "type": "string"
+                    },
+                    "cover_image_url": {
                       "type": "string"
                     },
                     "instructor": {

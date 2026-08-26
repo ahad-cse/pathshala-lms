@@ -65,10 +65,12 @@ export default function MyCoursesPage() {
               backgroundColor: 'var(--surface)',
               borderRadius: '16px',
               border: '1px solid var(--border)',
-              padding: '24px 28px',
+              padding: '20px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
               position: 'relative',
               overflow: 'hidden',
             }}

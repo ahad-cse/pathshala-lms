@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { quizApi } from '@/lib/api';
 import { Quiz, QuizEvaluationResult } from '@/types/content';
 import Link from 'next/link';
+import QuizSubmitModal from '@/components/QuizSubmitModal';
 
 interface PageProps {
   params: Promise<{
@@ -18,13 +19,14 @@ interface PageProps {
 export default function StudentQuizPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const { courseId, quizId } = resolvedParams;
-  const { user } = useAuth();
+  const { user, role, switchDemoRole } = useAuth();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizEvaluationResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 
   const loadQuiz = useCallback(async () => {
     try {
@@ -50,24 +52,19 @@ export default function StudentQuizPage({ params }: PageProps) {
     }));
   };
 
-  const handleSubmitQuiz = async (e: React.FormEvent) => {
+  const handleSubmitQuiz = (e: React.FormEvent) => {
     e.preventDefault();
-    const questions = quiz?.questions || [];
-    const answeredCount = Object.keys(selectedAnswers).length;
+    setIsSubmitModalOpen(true);
+  };
 
-    if (answeredCount < questions.length) {
-      if (!confirm(`You have answered ${answeredCount} of ${questions.length} questions. Do you want to submit anyway?`)) {
-        return;
-      }
-    }
-
+  const handleConfirmSubmitQuiz = async () => {
     setSubmitting(true);
     try {
       const res = await quizApi.submit(quizId, selectedAnswers);
       setResult(res.data);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      alert(err?.message || 'Failed to submit quiz.');
+      throw err;
     } finally {
       setSubmitting(false);
     }
@@ -488,9 +485,13 @@ export default function StudentQuizPage({ params }: PageProps) {
                   Ready to evaluate? Score will be graded instantly server-side.
                 </div>
 
-                {user?.role_type === 'student' ? (
+                {(role || user?.role_type) === 'student' ? (
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsSubmitModalOpen(true);
+                    }}
                     disabled={submitting}
                     style={{
                       padding: '12px 28px',
@@ -508,30 +509,46 @@ export default function StudentQuizPage({ params }: PageProps) {
                     {submitting ? 'Auto-Grading Answers...' : 'Submit Quiz for Evaluation →'}
                   </button>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '12.5px', color: 'var(--ink-faint)', fontWeight: 600 }}>
-                      🔒 Author Preview: Submission is reserved for Students.
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--ink-faint)', fontWeight: 600 }}>
+                      🔒 Preview Mode ({role?.toUpperCase() || 'AUTHOR'}):
                     </span>
-                    <Link
-                      href="/instructor/quizzes"
+                    <button
+                      type="button"
+                      onClick={() => switchDemoRole('student')}
                       style={{
-                        padding: '10px 18px',
+                        padding: '8px 14px',
                         borderRadius: '8px',
-                        backgroundColor: 'var(--role-instructor)',
+                        backgroundColor: 'var(--primary)',
                         color: '#FFFFFF',
-                        fontSize: '13px',
+                        fontSize: '12.5px',
                         fontWeight: 700,
-                        textDecoration: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
                       }}
                     >
-                      Return to Quiz Studio
-                    </Link>
+                      Switch to Student Mode to Submit 🎓
+                    </button>
                   </div>
                 )}
               </div>
             </form>
           )}
         </div>
+
+        {/* Beautiful Confirmation Modal for Quiz Submission */}
+        {quiz && (
+          <QuizSubmitModal
+            isOpen={isSubmitModalOpen}
+            onClose={() => setIsSubmitModalOpen(false)}
+            onConfirm={handleConfirmSubmitQuiz}
+            quizTitle={quiz.title}
+            totalQuestions={questions.length}
+            answeredCount={answeredCount}
+            passingScore={quiz.passing_score || 70}
+          />
+        )}
       </AppShell>
     </ProtectedRoute>
   );

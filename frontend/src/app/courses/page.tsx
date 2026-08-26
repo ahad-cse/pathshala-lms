@@ -205,7 +205,7 @@ export default function CoursesPage() {
               gap: '12px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '280px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 'min(100%, 280px)', flexWrap: 'wrap' }}>
               <input
                 type="text"
                 placeholder="Search courses by keyword..."

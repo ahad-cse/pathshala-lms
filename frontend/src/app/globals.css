@@ -205,3 +205,22 @@ button {
     display: none !important;
   }
 }
+
+/* Extra Mobile Polish (max-width: 480px) */
+@media (max-width: 480px) {
+  .topbar-courses-link {
+    display: none !important;
+  }
+
+  .topbar-header {
+    padding: 0 12px !important;
+  }
+
+  .topbar-title {
+    font-size: 14.5px !important;
+  }
+
+  table {
+    min-width: 520px;
+  }
+}

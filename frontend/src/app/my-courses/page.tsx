@@ -53,7 +53,7 @@ export default function MyCoursesPage() {
   }, [loadEnrollmentsAndProgress]);
 
   return (
-    <ProtectedRoute allowedRoles={['student', 'admin']}>
+    <ProtectedRoute>
       <AppShell
         title="My Enrolled Courses & Progress"
         subtitle={`Learning tracks and live completion status for ${user?.username || 'Student'}`}

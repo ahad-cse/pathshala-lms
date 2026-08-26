@@ -1,5 +1,6 @@
 'use client';
 
+
 import Logo from '@/components/Logo';
 
 import React, { useEffect, useState } from 'react';
@@ -52,6 +53,7 @@ export default function HomePage() {
     }
     loadData();
   }, []);
+
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--canvas)', display: 'flex', flexDirection: 'column', paddingTop: '70px' }}>

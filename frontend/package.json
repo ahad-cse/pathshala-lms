@@ -13,11 +13,13 @@
     "@tiptap/extension-placeholder": "^3.30.3",
     "@tiptap/react": "^3.30.3",
     "@tiptap/starter-kit": "^3.30.3",
+    "canvas-confetti": "^1.9.4",
     "next": "16.3.2",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

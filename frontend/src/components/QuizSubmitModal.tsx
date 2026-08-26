@@ -60,6 +60,7 @@ export default function QuizSubmitModal({
       onClick={onClose}
     >
       <div
+        className="modal-content-animated"
         style={{
           backgroundColor: 'var(--surface)',
           borderRadius: '18px',

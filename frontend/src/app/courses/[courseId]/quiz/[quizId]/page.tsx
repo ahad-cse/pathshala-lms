@@ -1,5 +1,7 @@
 'use client';
 
+import confetti from 'canvas-confetti';
+
 import React, { useEffect, useState, useCallback, use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
@@ -62,6 +64,18 @@ export default function StudentQuizPage({ params }: PageProps) {
     try {
       const res = await quizApi.submit(quizId, selectedAnswers);
       setResult(res.data);
+      if (res.data?.passed) {
+        try {
+          confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.6 },
+            colors: ['#F2662A', '#16A34A', '#4F46E5', '#E11D48', '#FFD700'],
+          });
+        } catch (e) {
+          // Fallback if canvas is unavailable
+        }
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       throw err;
@@ -157,7 +171,7 @@ export default function StudentQuizPage({ params }: PageProps) {
             </div>
           ) : result ? (
             /* Instant Server-Side Graded Results Card */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="modal-content-animated" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div
                 style={{
                   backgroundColor: 'var(--surface)',

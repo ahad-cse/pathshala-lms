@@ -223,6 +223,7 @@ export default function DashboardPage() {
               {currentRole === 'student' && (
                 <Link
                   href="/courses"
+                  className="btn-interactive"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -244,6 +245,7 @@ export default function DashboardPage() {
               {currentRole === 'instructor' && (
                 <Link
                   href="/instructor/courses"
+                  className="btn-interactive"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -265,6 +267,7 @@ export default function DashboardPage() {
               {(currentRole === 'admin' || currentRole === 'content_manager') && (
                 <Link
                   href={currentRole === 'admin' ? '/admin' : '/courses'}
+                  className="btn-interactive"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -290,7 +293,7 @@ export default function DashboardPage() {
             {currentRole === 'student' && (
               <>
                 {/* Metric 1: Enrolled Courses */}
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Enrolled Courses
                   </div>
@@ -303,7 +306,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Metric 2: Completed Lessons */}
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Completed Lessons
                   </div>
@@ -316,7 +319,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Metric 3: Quizzes & Assessment Performance */}
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Quizzes Completed
                   </div>
@@ -332,7 +335,7 @@ export default function DashboardPage() {
 
             {currentRole === 'instructor' && (
               <>
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     My Created Courses
                   </div>
@@ -344,7 +347,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Total Lessons Authored
                   </div>
@@ -356,7 +359,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Active Students
                   </div>
@@ -372,7 +375,7 @@ export default function DashboardPage() {
 
             {currentRole === 'content_manager' && (
               <>
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Platform Courses
                   </div>
@@ -384,7 +387,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Blog Publications
                   </div>
@@ -396,7 +399,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Editorial Control
                   </div>
@@ -412,7 +415,7 @@ export default function DashboardPage() {
 
             {currentRole === 'admin' && (
               <>
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Total Registered Users
                   </div>
@@ -424,7 +427,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Platform Courses
                   </div>
@@ -436,7 +439,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
                     Backend Security
                   </div>
@@ -467,9 +470,10 @@ export default function DashboardPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               <Link
                 href="/courses"
+                className="interactive-card"
                 style={{
                   padding: '16px',
-                  borderRadius: '10px',
+                  borderRadius: '12px',
                   backgroundColor: 'var(--canvas)',
                   border: '1px solid var(--border-soft)',
                   textDecoration: 'none',

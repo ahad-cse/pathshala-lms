@@ -1,5 +1,7 @@
 'use client';
 
+import confetti from 'canvas-confetti';
+
 import React, { useEffect, useState, useCallback, use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
@@ -82,6 +84,17 @@ export default function LessonViewerPage({ params }: PageProps) {
         percentage: res.data.percentage,
         completedLessonIds: res.data.completedLessonIds,
       });
+
+      if (res.data?.percentage === 100) {
+        try {
+          confetti({
+            particleCount: 150,
+            spread: 90,
+            origin: { y: 0.5 },
+            colors: ['#F2662A', '#16A34A', '#4F46E5', '#E11D48', '#FFD700'],
+          });
+        } catch (e) {}
+      }
     } catch (err: any) {
       alert(err?.message || 'Failed to update lesson progress.');
     } finally {

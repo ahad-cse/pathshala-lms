@@ -255,6 +255,7 @@ export default function CoursesPage() {
             {(canManageGlobal || role === 'instructor') && (
               <button
                 onClick={handleOpenCreateCourse}
+                className="btn-interactive"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -314,6 +315,7 @@ export default function CoursesPage() {
                 return (
                   <div
                     key={course.documentId}
+                    className="interactive-card"
                     style={{
                       backgroundColor: 'var(--surface)',
                       borderRadius: '16px',
@@ -338,6 +340,7 @@ export default function CoursesPage() {
                         <img
                           src={course.cover_image_url}
                           alt={course.title}
+                          className="card-media"
                           style={{
                             position: 'absolute',
                             top: 0,
@@ -722,6 +725,7 @@ export default function CoursesPage() {
             <div style={{ textAlign: 'center', marginTop: '32px' }}>
               <button
                 onClick={() => setVisibleCount((prev) => prev + 6)}
+                className="btn-interactive"
                 style={{
                   padding: '12px 28px',
                   borderRadius: '99px',

@@ -194,6 +194,7 @@ export default function MyCoursesPage() {
                 return (
                   <div
                     key={enrollment.documentId}
+                    className="interactive-card"
                     style={{
                       backgroundColor: 'var(--surface)',
                       borderRadius: '16px',
@@ -218,6 +219,7 @@ export default function MyCoursesPage() {
                         <img
                           src={course.cover_image_url}
                           alt={course.title}
+                          className="card-media"
                           style={{
                             position: 'absolute',
                             top: 0,
@@ -291,12 +293,13 @@ export default function MyCoursesPage() {
                         </div>
                         <div style={{ height: '6px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
                           <div
+                            className={percentage > 0 && percentage < 100 ? 'progress-shimmer' : ''}
                             style={{
                               height: '100%',
                               width: `${percentage}%`,
                               backgroundColor: percentage === 100 ? 'var(--success)' : 'var(--primary)',
                               borderRadius: '99px',
-                              transition: 'width 0.3s ease',
+                              transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                             }}
                           />
                         </div>
@@ -324,6 +327,7 @@ export default function MyCoursesPage() {
                       {/* Action Button */}
                       <Link
                         href={targetUrl}
+                        className="btn-interactive"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -354,6 +358,7 @@ export default function MyCoursesPage() {
             <div style={{ textAlign: 'center', marginTop: '32px' }}>
               <button
                 onClick={() => setVisibleCount((prev) => prev + 6)}
+                className="btn-interactive"
                 style={{
                   padding: '12px 28px',
                   borderRadius: '99px',

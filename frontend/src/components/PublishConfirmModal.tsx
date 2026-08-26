@@ -58,6 +58,7 @@ export default function PublishConfirmModal({
       onClick={onClose}
     >
       <div
+        className="modal-content-animated"
         style={{
           backgroundColor: 'var(--surface)',
           borderRadius: '18px',

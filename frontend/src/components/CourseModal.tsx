@@ -130,6 +130,7 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
       onClick={onClose}
     >
       <div
+        className="modal-content-animated"
         style={{
           backgroundColor: 'var(--surface)',
           borderRadius: '16px',

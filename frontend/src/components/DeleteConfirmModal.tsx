@@ -53,6 +53,7 @@ export default function DeleteConfirmModal({
       onClick={onClose}
     >
       <div
+        className="modal-content-animated"
         style={{
           backgroundColor: 'var(--surface)',
           borderRadius: '16px',

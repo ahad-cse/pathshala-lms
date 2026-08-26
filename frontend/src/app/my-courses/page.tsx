@@ -13,6 +13,7 @@ export default function MyCoursesPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, CourseProgress>>({});
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(6);
 
   const loadEnrollmentsAndProgress = useCallback(async () => {
     try {
@@ -173,7 +174,7 @@ export default function MyCoursesPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
-              {enrollments.map((enrollment) => {
+              {enrollments.slice(0, visibleCount).map((enrollment) => {
                 const course = enrollment.course;
                 if (!course) return null;
 
@@ -343,6 +344,43 @@ export default function MyCoursesPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {!loading && enrollments.length > visibleCount && (
+            <div style={{ textAlign: 'center', marginTop: '32px' }}>
+              <button
+                onClick={() => setVisibleCount((prev) => prev + 6)}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: '99px',
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--ink)',
+                  fontSize: '13.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(242, 102, 42, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--ink)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                }}
+              >
+                <span>Load More Courses</span>
+                <span>↓</span>
+              </button>
             </div>
           )}
         </div>

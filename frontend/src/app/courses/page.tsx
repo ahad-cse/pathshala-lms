@@ -19,6 +19,7 @@ export default function CoursesPage() {
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(6);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -209,7 +210,10 @@ export default function CoursesPage() {
                 type="text"
                 placeholder="Search courses by keyword..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setVisibleCount(6);
+            }}
                 style={{
                   padding: '9px 14px',
                   borderRadius: '8px',
@@ -225,7 +229,10 @@ export default function CoursesPage() {
 
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setVisibleCount(6);
+            }}
                 style={{
                   padding: '9px 12px',
                   borderRadius: '8px',
@@ -296,7 +303,7 @@ export default function CoursesPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
-              {filteredCourses.map((course) => {
+              {filteredCourses.slice(0, visibleCount).map((course) => {
                 const isManaged = canManageCourse(course);
                 const isExpanded = expandedCourseId === course.documentId;
                 const lessonsCount = course.lessons?.length || 0;
@@ -707,6 +714,43 @@ export default function CoursesPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Load More Button */}
+          {!loading && filteredCourses.length > visibleCount && (
+            <div style={{ textAlign: 'center', marginTop: '32px' }}>
+              <button
+                onClick={() => setVisibleCount((prev) => prev + 6)}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: '99px',
+                  backgroundColor: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--ink)',
+                  fontSize: '13.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(242, 102, 42, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--ink)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
+                }}
+              >
+                <span>Load More Courses</span>
+                <span>↓</span>
+              </button>
             </div>
           )}
         </div>

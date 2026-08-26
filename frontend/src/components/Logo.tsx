@@ -146,14 +146,14 @@ export default function Logo({
 
   const badgeFontSize =
     typeof size === 'number'
-      ? Math.max(9, Math.round(size * 0.28))
+      ? `${Math.max(8, Math.round(size * 0.24))}px`
       : size === 'sm'
-      ? '9.5px'
+      ? '8px'
       : size === 'md'
-      ? '11px'
+      ? '9px'
       : size === 'lg'
-      ? '12px'
-      : '13px';
+      ? '10px'
+      : '11px';
 
   const content = (
     <div
@@ -191,11 +191,12 @@ export default function Logo({
                 fontWeight: 700,
                 color: 'var(--primary)',
                 backgroundColor: 'var(--primary-soft)',
-                padding: '2px 7px',
+                padding: '1px 5.5px',
                 borderRadius: '99px',
                 border: '1px solid rgba(242, 102, 42, 0.2)',
-                lineHeight: 1.2,
-                letterSpacing: '0.04em',
+                lineHeight: 1.15,
+                letterSpacing: '0.05em',
+                transform: 'translateY(-1px)',
               }}
             >
               {badgeText}

@@ -18,9 +18,18 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
+// Client-Side In-Memory Cache (60s TTL) for Instant Navigation
+const apiCache = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL_MS = 60 * 1000;
+
+export function clearApiCache() {
+  apiCache.clear();
+}
+
 interface FetchOptions extends RequestInit {
   token?: string;
   params?: Record<string, string | number | boolean>;
+  skipCache?: boolean;
 }
 
 export class ApiError extends Error {
@@ -42,7 +51,7 @@ export async function apiFetch<T = any>(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  const { token, params, headers, ...restOptions } = options;
+  const { token, params, headers, skipCache, ...restOptions } = options;
 
   let url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
@@ -68,6 +77,18 @@ export async function apiFetch<T = any>(
   const authToken = !isPublicAuthEndpoint && (token || (typeof window !== 'undefined' ? localStorage.getItem('pathshala_token') : null));
   if (authToken) {
     defaultHeaders['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  const method = (restOptions.method || 'GET').toUpperCase();
+  const isBrowser = typeof window !== 'undefined';
+  const cacheKey = `${method}:${url}:${authToken || 'guest'}`;
+
+  // Serve from in-memory cache for fast GET responses
+  if (method === 'GET' && isBrowser && !skipCache) {
+    const cached = apiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data as T;
+    }
   }
 
   const res = await fetch(url, {

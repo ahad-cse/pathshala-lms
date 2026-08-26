@@ -26,7 +26,7 @@
 
 ## System Architecture & Data Flow
 
-![PathShala LMS System Architecture & Data Flow](docs/architecture.svg)
+![PathShala LMS System Architecture & Data Flow](architecture.svg)
 
 ---
 

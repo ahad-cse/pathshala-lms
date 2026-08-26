@@ -7,6 +7,8 @@ import { blogApi } from '@/lib/api';
 import { BlogPost, BlogPostFormData } from '@/types/content';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import PublishConfirmModal from '@/components/PublishConfirmModal';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
   ssr: false,
@@ -32,6 +34,25 @@ export default function BlogPage() {
     is_published: false,
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Modals for Publish and Delete confirmations
+  const [publishModalState, setPublishModalState] = useState<{
+    isOpen: boolean;
+    post: BlogPost | null;
+    isPublishing: boolean;
+  }>({
+    isOpen: false,
+    post: null,
+    isPublishing: true,
+  });
+
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean;
+    post: BlogPost | null;
+  }>({
+    isOpen: false,
+    post: null,
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const canAuthor = user && (user.role_type === 'admin' || user.role_type === 'content_manager');
@@ -104,37 +125,37 @@ export default function BlogPage() {
     }
   };
 
-  const handleTogglePublish = async (post: BlogPost) => {
-    const nextStatus = !post.is_published;
-    const actionName = nextStatus ? 'publish' : 'unpublish (save as draft)';
-
-    if (!confirm(`Are you sure you want to ${actionName} "${post.title}"?`)) {
-      return;
-    }
-
-    try {
-      await blogApi.update(post.documentId, { is_published: nextStatus });
-      setToastMessage(nextStatus ? `Published "${post.title}"!` : `Moved "${post.title}" to drafts.`);
-      setTimeout(() => setToastMessage(null), 3000);
-      loadPosts();
-    } catch (err: any) {
-      alert(err?.message || 'Failed to toggle publication status.');
-    }
+  const handleOpenPublishModal = (post: BlogPost) => {
+    setPublishModalState({
+      isOpen: true,
+      post,
+      isPublishing: !post.is_published,
+    });
   };
 
-  const handleDeletePost = async (post: BlogPost) => {
-    if (!confirm(`Are you sure you want to permanently delete article "${post.title}"?`)) {
-      return;
-    }
+  const handleConfirmPublish = async () => {
+    if (!publishModalState.post) return;
+    const post = publishModalState.post;
+    const nextStatus = !post.is_published;
+    await blogApi.update(post.documentId, { is_published: nextStatus });
+    setToastMessage(nextStatus ? `Published "${post.title}"!` : `Moved "${post.title}" to drafts.`);
+    setTimeout(() => setToastMessage(null), 3000);
+    await loadPosts();
+  };
 
-    try {
-      await blogApi.delete(post.documentId);
-      setToastMessage(`Deleted "${post.title}"`);
-      setTimeout(() => setToastMessage(null), 3000);
-      loadPosts();
-    } catch (err: any) {
-      alert(err?.message || 'Failed to delete blog post.');
-    }
+  const handleOpenDeleteModal = (post: BlogPost) => {
+    setDeleteModalState({
+      isOpen: true,
+      post,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalState.post) return;
+    await blogApi.delete(deleteModalState.post.documentId);
+    setToastMessage(`Deleted "${deleteModalState.post.title}"`);
+    setTimeout(() => setToastMessage(null), 3000);
+    await loadPosts();
   };
 
   const filteredPosts = posts.filter((p) => {
@@ -407,7 +428,7 @@ export default function BlogPage() {
                     {canAuthor && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <button
-                          onClick={() => handleTogglePublish(featuredPost)}
+                          onClick={() => handleOpenPublishModal(featuredPost)}
                           style={{
                             padding: '6px 12px',
                             borderRadius: '6px',
@@ -439,7 +460,7 @@ export default function BlogPage() {
                         </button>
 
                         <button
-                          onClick={() => handleDeletePost(featuredPost)}
+                          onClick={() => handleOpenDeleteModal(featuredPost)}
                           style={{
                             padding: '6px 12px',
                             borderRadius: '6px',
@@ -538,7 +559,7 @@ export default function BlogPage() {
                         {canAuthor && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <button
-                              onClick={() => handleTogglePublish(post)}
+                              onClick={() => handleOpenPublishModal(post)}
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '4px',
@@ -550,7 +571,7 @@ export default function BlogPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              {post.is_published ? 'Draft' : 'Publish'}
+                              {post.is_published ? 'Unpublish' : 'Publish'}
                             </button>
                             <button
                               onClick={() => openEditModal(post)}
@@ -568,7 +589,7 @@ export default function BlogPage() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDeletePost(post)}
+                              onClick={() => handleOpenDeleteModal(post)}
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '4px',
@@ -591,6 +612,30 @@ export default function BlogPage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Publish / Unpublish Confirmation Modal */}
+        {publishModalState.post && (
+          <PublishConfirmModal
+            isOpen={publishModalState.isOpen}
+            onClose={() => setPublishModalState((prev) => ({ ...prev, isOpen: false }))}
+            onConfirm={handleConfirmPublish}
+            title={publishModalState.isPublishing ? 'Publish Article to Platform' : 'Unpublish Article to Drafts'}
+            articleTitle={publishModalState.post.title}
+            isPublishing={publishModalState.isPublishing}
+          />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalState.post && (
+          <DeleteConfirmModal
+            isOpen={deleteModalState.isOpen}
+            onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
+            onConfirm={handleConfirmDelete}
+            title="Delete Article"
+            message={`Are you sure you want to permanently delete "${deleteModalState.post.title}"? This action cannot be undone.`}
+            itemType="article"
+          />
         )}
 
         {/* Modal: Write / Edit Article with TipTap WYSIWYG Editor */}

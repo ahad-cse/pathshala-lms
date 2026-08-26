@@ -1,5 +1,7 @@
 'use client';
 
+import Logo from '@/components/Logo';
+
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -148,67 +150,19 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         zIndex: 20,
       }}
     >
-      {/* Brand Header */}
+      {/* Brand Header with Vector Logo */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px 20px' }}>
-        <Link
+        <Logo
+          size={34}
+          badgeText="LMS"
           href="/"
-          title="Go to Home"
-          onClick={(e) => {
+          onClick={() => {
             if (typeof window !== 'undefined' && window.location.pathname === '/') {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
             if (onClose) onClose();
           }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            textDecoration: 'none',
-            cursor: 'pointer',
-          }}
-        >
-          <div
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '9px',
-              backgroundColor: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              fontWeight: 800,
-              fontSize: '17px',
-              fontFamily: 'var(--font-display)',
-              boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
-            }}
-          >
-            P
-          </div>
-          <div>
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: '16.5px',
-                letterSpacing: '-0.02em',
-                color: 'var(--ink)',
-                fontFamily: 'var(--font-display)',
-              }}
-            >
-              PathShala
-            </div>
-            <div
-              style={{
-                fontSize: '11px',
-                color: 'var(--ink-faint)',
-                fontWeight: 600,
-                lineHeight: 1,
-              }}
-            >
-              LMS Platform
-            </div>
-          </div>
-        </Link>
+        />
 
         {/* Mobile Close Button */}
         {onClose && (

@@ -27,6 +27,13 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'PathShala LMS — Learning Management System',
   description: 'Role-based Learning Management System with Courses, Lessons, Quizzes, and Progress Tracking.',
+  icons: {
+    icon: [
+      { url: '/logo-icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/logo-icon.svg',
+    apple: '/logo-icon.svg',
+  },
 };
 
 export default function RootLayout({

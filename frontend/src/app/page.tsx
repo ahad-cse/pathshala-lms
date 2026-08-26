@@ -1,5 +1,7 @@
 'use client';
 
+import Logo from '@/components/Logo';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth, ROLE_DETAILS } from '@/context/AuthContext';
@@ -76,50 +78,23 @@ export default function HomePage() {
           boxShadow: '0 1px 6px rgba(0, 0, 0, 0.04)',
         }}
       >
-        {/* Left Side: Brand Logo */}
-        <Link
+        {/* Left Side: Brand Logo with Vector Icon */}
+        <Logo
+          size="md"
           href="/"
-          title="PathShala Home"
-          onClick={(e) => {
-            if (typeof window !== 'undefined') {
+          onClick={() => {
+            if (typeof window !== 'undefined' && window.location.pathname === '/') {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', cursor: 'pointer' }}
-        >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              backgroundColor: 'var(--primary)',
-              color: '#FFFFFF',
-              fontWeight: 800,
-              fontSize: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-display)',
-              boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
-            }}
-          >
-            P
-          </div>
-          <div>
-            <span style={{ fontWeight: 800, fontSize: '18px', color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-              PathShala
-            </span>
-            <span style={{ fontSize: '11px', color: 'var(--ink-faint)', marginLeft: '6px', fontWeight: 600 }}>
-              LMS
-            </span>
-          </div>
-        </Link>
+        />
 
         {/* Right Side: Blog Capsule + User Avatar / Auth Buttons (Clean Mobile & Desktop Layout) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* High-End Blog Navigation Capsule */}
+          {/* High-End Blog Navigation Capsule (Visible on Desktop; Hidden on Mobile when Unauthenticated) */}
           <Link
             href="/blog"
+            className={!user ? 'hide-guest-blog-mobile' : ''}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -869,10 +844,15 @@ export default function HomePage() {
           fontSize: '13px',
           color: 'var(--ink-faint)',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '16px',
         }}
       >
-        <div>© 2026 PathShala LMS. All rights reserved.</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <Logo size="sm" showBadge={false} href="/" />
+          <span style={{ color: 'var(--ink-faint)', fontSize: '12.5px' }}>
+            © 2026 PathShala LMS. All rights reserved.
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <Link href="/blog" style={{ color: 'var(--ink-soft)', textDecoration: 'none', fontWeight: 600 }}>
             Blog

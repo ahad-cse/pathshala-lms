@@ -1,5 +1,7 @@
 'use client';
 
+import { LogoIcon } from '@/components/Logo';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -73,28 +75,11 @@ export default function SignupPage() {
           boxSizing: 'border-box',
         }}
       >
-        {/* Header */}
+        {/* Header with Vector Logo */}
         <div style={{ textAlign: 'center', marginBottom: '26px' }}>
           <Link href="/" title="Go to Home" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div
-              style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '12px',
-                backgroundColor: 'var(--primary)',
-                color: '#FFFFFF',
-                fontWeight: 800,
-                fontSize: '22px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'var(--font-display)',
-                marginBottom: '12px',
-                boxShadow: '0 4px 12px rgba(242, 102, 42, 0.35)',
-                cursor: 'pointer',
-              }}
-            >
-              P
+            <div style={{ marginBottom: '14px', display: 'inline-block' }}>
+              <LogoIcon size={52} />
             </div>
             <h1 style={{ fontSize: '23px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px', cursor: 'pointer' }}>
               Create Student Account

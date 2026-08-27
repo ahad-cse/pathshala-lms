@@ -490,9 +490,26 @@ export default function CoursesPage() {
                           </span>
                         </div>
 
-                        <span style={{ fontWeight: 600, color: 'var(--ink-soft)' }}>
-                          {lessonsCount} {lessonsCount === 1 ? 'Lesson' : 'Lessons'}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--ink-soft)' }}>
+                            {lessonsCount} {lessonsCount === 1 ? 'Lesson' : 'Lessons'}
+                          </span>
+                          {course.quizzes && course.quizzes.length > 0 && (
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: '6px',
+                                backgroundColor: 'var(--warning-soft)',
+                                color: 'var(--warning)',
+                                border: '1px solid rgba(245, 158, 11, 0.25)',
+                              }}
+                            >
+                              Quiz Attached
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Student Enrollment CTA Button */}
@@ -708,6 +725,40 @@ export default function CoursesPage() {
                                     )}
                                   </div>
                                 ))
+                            )}
+
+                            {/* Course Assessment Quizzes */}
+                            {course.quizzes && course.quizzes.length > 0 && (
+                              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border)' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>
+                                  Course Assessment Quiz:
+                                </div>
+                                {course.quizzes.map((q) => (
+                                  <Link
+                                    key={q.documentId || q.id}
+                                    href={`/courses/${course.documentId}/quiz/${q.documentId}`}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '8px 10px',
+                                      borderRadius: '6px',
+                                      backgroundColor: 'var(--warning-soft)',
+                                      color: 'var(--warning)',
+                                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                                      textDecoration: 'none',
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span>📝</span>
+                                      <span>{q.title}</span>
+                                    </div>
+                                    <span style={{ fontSize: '11px', opacity: 0.9 }}>Pass: {q.passing_score}% →</span>
+                                  </Link>
+                                ))}
+                              </div>
                             )}
                           </div>
                         )}

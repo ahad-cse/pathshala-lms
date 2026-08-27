@@ -256,7 +256,15 @@ export default function QuizStudioPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
               {quizzes.map((quiz) => {
                 const qCount = quiz.questions?.length || 0;
-                const courseTitle = quiz.course?.title || 'General Curriculum';
+                const matchedCourse = myCourses.find(
+                  (c) =>
+                    (quiz.course?.documentId && c.documentId === quiz.course.documentId) ||
+                    (quiz.course?.id && c.id === quiz.course.id) ||
+                    (typeof quiz.course === 'string' && (c.documentId === quiz.course || c.id === quiz.course)) ||
+                    (typeof quiz.course === 'number' && c.id === quiz.course)
+                );
+                const courseTitle = quiz.course?.title || matchedCourse?.title || 'General Curriculum';
+                const courseDocId = quiz.course?.documentId || matchedCourse?.documentId || '';
 
                 return (
                   <div
@@ -272,18 +280,24 @@ export default function QuizStudioPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          backgroundColor: 'var(--role-instructor-soft)',
-                          color: 'var(--role-instructor)',
-                        }}
-                      >
-                        {courseTitle}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '80%' }}>
+                        <span
+                          style={{
+                            fontSize: '11.5px',
+                            fontWeight: 700,
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            backgroundColor: 'var(--role-instructor-soft)',
+                            color: 'var(--role-instructor)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={`Assigned Course: ${courseTitle}`}
+                        >
+                          📚 {courseTitle}
+                        </span>
+                      </div>
 
                       <button
                         onClick={() => handleDeleteQuiz(quiz)}
@@ -327,7 +341,7 @@ export default function QuizStudioPage() {
                     </div>
 
                     <Link
-                      href={`/courses/${quiz.course?.documentId || 'c'}/quiz/${quiz.documentId}`}
+                      href={`/courses/${courseDocId || quiz.course?.documentId || 'c'}/quiz/${quiz.documentId}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',

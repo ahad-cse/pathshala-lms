@@ -18,6 +18,9 @@ export default factories.createCoreController('api::course.course', ({ strapi })
           fields: ['id', 'title', 'order', 'video_url'],
           sort: { order: 'asc' },
         },
+        quizzes: {
+          fields: ['id', 'documentId', 'title', 'passing_score'],
+        },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
     };
@@ -35,6 +38,9 @@ export default factories.createCoreController('api::course.course', ({ strapi })
         lessons: {
           fields: ['id', 'title', 'order', 'video_url', 'content'],
           sort: { order: 'asc' },
+        },
+        quizzes: {
+          fields: ['id', 'documentId', 'title', 'passing_score'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },

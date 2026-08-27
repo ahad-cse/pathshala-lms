@@ -22,6 +22,7 @@ export default function StudentQuizPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const { courseId, quizId } = resolvedParams;
   const { user, role, switchDemoRole } = useAuth();
+  const isStudent = (role || user?.role_type) === 'student';
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
@@ -29,6 +30,7 @@ export default function StudentQuizPage({ params }: PageProps) {
   const [result, setResult] = useState<QuizEvaluationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [showAnswerKeys, setShowAnswerKeys] = useState(true);
 
   const loadQuiz = useCallback(async () => {
     try {
@@ -385,13 +387,13 @@ export default function StudentQuizPage({ params }: PageProps) {
                   {quiz.title}
                 </h2>
                 <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: '0 0 16px', lineHeight: 1.5 }}>
-                  {quiz.description || 'Answer all questions below and submit for instant server-side auto-grading.'}
+                  {quiz.description || (isStudent ? 'Answer all questions below and submit for instant server-side auto-grading.' : 'Curriculum assessment questions and configured answer keys.')}
                 </p>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12.5px', color: 'var(--ink-faint)' }}>
                   <span>{questions.length} Multiple Choice Questions</span>
                   <span style={{ fontWeight: 700, color: 'var(--ink)' }}>
-                    Progress: {answeredCount} of {questions.length} answered
+                    {isStudent ? `Progress: ${answeredCount} of ${questions.length} answered` : `Passing Threshold: ${quiz.passing_score}%`}
                   </span>
                 </div>
               </div>
@@ -439,49 +441,125 @@ export default function StudentQuizPage({ params }: PageProps) {
                       {q.question}
                     </h3>
 
-                    {/* Radio Options Grid */}
+                    {/* Options Grid */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {q.options.map((opt, optIdx) => {
-                        const isSelected = selectedOption === optIdx;
+                        if (isStudent) {
+                          const isSelected = selectedOption === optIdx;
+                          return (
+                            <div
+                              key={optIdx}
+                              onClick={() => handleSelectOption(qIdx, optIdx)}
+                              style={{
+                                padding: '12px 16px',
+                                borderRadius: '10px',
+                                backgroundColor: isSelected ? 'var(--role-student-soft)' : 'var(--canvas)',
+                                border: isSelected ? '1.5px solid var(--role-student)' : '1px solid var(--border)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                transition: 'all 0.12s ease',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: '18px',
+                                  height: '18px',
+                                  borderRadius: '50%',
+                                  border: isSelected ? '5px solid var(--role-student)' : '2px solid var(--border)',
+                                  backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 600 : 400, color: isSelected ? 'var(--role-student)' : 'var(--ink)' }}>
+                                {opt}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        // Non-Student Inspection Mode (Read-only, clean, no click action)
+                        const isCorrectKey = q.correct_option_index !== undefined && Number(q.correct_option_index) === optIdx;
 
                         return (
                           <div
                             key={optIdx}
-                            onClick={() => handleSelectOption(qIdx, optIdx)}
                             style={{
                               padding: '12px 16px',
                               borderRadius: '10px',
-                              backgroundColor: isSelected ? 'var(--role-student-soft)' : 'var(--canvas)',
-                              border: isSelected ? '1.5px solid var(--role-student)' : '1px solid var(--border)',
-                              cursor: 'pointer',
+                              backgroundColor: isCorrectKey ? 'rgba(22, 163, 74, 0.08)' : 'var(--canvas)',
+                              border: isCorrectKey ? '1.5px solid #16A34A' : '1px solid var(--border-soft)',
+                              cursor: 'default',
                               display: 'flex',
                               alignItems: 'center',
+                              justifyContent: 'space-between',
                               gap: '12px',
-                              transition: 'all 0.12s ease',
                             }}
                           >
-                            <span
-                              style={{
-                                width: '18px',
-                                height: '18px',
-                                borderRadius: '50%',
-                                border: isSelected ? '5px solid var(--role-student)' : '2px solid var(--border)',
-                                backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
-                                flexShrink: 0,
-                              }}
-                            />
-                            <span style={{ fontSize: '13.5px', fontWeight: isSelected ? 600 : 400, color: isSelected ? 'var(--role-student)' : 'var(--ink)' }}>
-                              {opt}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span
+                                style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  borderRadius: '50%',
+                                  backgroundColor: isCorrectKey ? '#16A34A' : 'var(--border-soft)',
+                                  color: isCorrectKey ? '#FFFFFF' : 'var(--ink-faint)',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {String.fromCharCode(65 + optIdx)}
+                              </span>
+                              <span style={{ fontSize: '13.5px', fontWeight: isCorrectKey ? 700 : 400, color: isCorrectKey ? '#16A34A' : 'var(--ink)' }}>
+                                {opt}
+                              </span>
+                            </div>
+
+                            {isCorrectKey && (
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  backgroundColor: '#16A34A',
+                                  color: '#FFFFFF',
+                                }}
+                              >
+                                ✓ Correct Answer Key
+                              </span>
+                            )}
                           </div>
                         );
                       })}
                     </div>
+
+                    {/* Instructor Explanation in Inspection Mode */}
+                    {!isStudent && q.explanation && (
+                      <div
+                        style={{
+                          backgroundColor: 'var(--canvas)',
+                          border: '1px dashed var(--border)',
+                          borderRadius: '8px',
+                          padding: '10px 14px',
+                          fontSize: '12.5px',
+                          color: 'var(--ink-soft)',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        <strong style={{ color: 'var(--ink)' }}>Explanation:</strong> {q.explanation}
+                      </div>
+                    )}
                   </div>
                 );
               })}
 
-              {/* Submit Action Card */}
+              {/* Bottom Action Card */}
               <div
                 style={{
                   backgroundColor: 'var(--surface)',
@@ -495,56 +573,74 @@ export default function StudentQuizPage({ params }: PageProps) {
                   gap: '12px',
                 }}
               >
-                <div style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
-                  Ready to evaluate? Score will be graded instantly server-side.
-                </div>
+                {isStudent ? (
+                  <>
+                    <div style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+                      Ready to evaluate? Score will be graded instantly server-side.
+                    </div>
 
-                {(role || user?.role_type) === 'student' ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsSubmitModalOpen(true);
-                    }}
-                    disabled={submitting}
-                    style={{
-                      padding: '12px 28px',
-                      borderRadius: '9px',
-                      backgroundColor: 'var(--primary)',
-                      color: '#FFFFFF',
-                      fontSize: '14px',
-                      fontWeight: 800,
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      opacity: submitting ? 0.7 : 1,
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
-                    }}
-                  >
-                    {submitting ? 'Auto-Grading Answers...' : 'Submit Quiz for Evaluation →'}
-                  </button>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--ink-faint)', fontWeight: 600 }}>
-                      🔒 Preview Mode ({role?.toUpperCase() || 'AUTHOR'}):
-                    </span>
                     <button
                       type="button"
-                      onClick={() => switchDemoRole('student')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsSubmitModalOpen(true);
+                      }}
+                      disabled={submitting}
                       style={{
-                        padding: '8px 14px',
-                        borderRadius: '8px',
+                        padding: '12px 28px',
+                        borderRadius: '9px',
                         backgroundColor: 'var(--primary)',
                         color: '#FFFFFF',
-                        fontSize: '12.5px',
-                        fontWeight: 700,
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        cursor: submitting ? 'not-allowed' : 'pointer',
+                        opacity: submitting ? 0.7 : 1,
                         border: 'none',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
+                        boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
                       }}
                     >
-                      Switch to Student Mode to Submit 🎓
+                      {submitting ? 'Auto-Grading Answers...' : 'Submit Quiz for Evaluation →'}
                     </button>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>
+                      All <strong>{questions.length} questions</strong> and answer keys are configured for student evaluation.
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Link
+                        href="/courses"
+                        style={{
+                          padding: '9px 16px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--canvas)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--ink)',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        ← Back to Courses
+                      </Link>
+                      <Link
+                        href="/quizzes"
+                        style={{
+                          padding: '9px 18px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--primary)',
+                          color: '#FFFFFF',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
+                        }}
+                      >
+                        Edit Quiz in Studio →
+                      </Link>
+                    </div>
+                  </>
                 )}
               </div>
             </form>

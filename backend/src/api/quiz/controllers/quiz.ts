@@ -113,6 +113,69 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
     return ctx.created({ data: newQuiz });
   },
 
+  async update(ctx) {
+    const user = ctx.state.user;
+    const { id } = ctx.params;
+
+    if (!user) {
+      return ctx.unauthorized('You must be logged in to update a quiz.');
+    }
+
+    if (user.role_type === 'student') {
+      return ctx.forbidden('Students cannot author or update quizzes.');
+    }
+
+    // Resolve quiz
+    const targetQuiz = typeof id === 'string'
+      ? await strapi.documents('api::quiz.quiz').findOne({
+          documentId: id,
+          populate: ['course.instructor'],
+        })
+      : await strapi.db.query('api::quiz.quiz').findOne({
+          where: { id },
+          populate: ['course.instructor'],
+        });
+
+    if (!targetQuiz) {
+      return ctx.notFound('Quiz not found.');
+    }
+
+    // Instructor ownership check
+    if (user.role_type === 'instructor') {
+      const instrId = (targetQuiz.course?.instructor as any)?.id;
+      const instrDocId = (targetQuiz.course?.instructor as any)?.documentId;
+      const isOwner = (instrId && instrId === user.id) || (instrDocId && instrDocId === user.documentId);
+
+      if (!isOwner) {
+        return ctx.forbidden('Access denied: Instructors can only update quizzes for their own courses.');
+      }
+    }
+
+    const { title, description, passing_score, questions, course: courseInput } = ctx.request.body?.data || {};
+
+    const updatedData: any = {};
+    if (title) updatedData.title = title;
+    if (description !== undefined) updatedData.description = description;
+    if (passing_score !== undefined) updatedData.passing_score = Number(passing_score);
+    if (questions && Array.isArray(questions)) updatedData.questions = questions;
+    if (courseInput) {
+      const resolvedCourse = typeof courseInput === 'string'
+        ? await strapi.documents('api::course.course').findOne({ documentId: courseInput })
+        : await strapi.db.query('api::course.course').findOne({ where: { id: courseInput } });
+      if (resolvedCourse) {
+        updatedData.course = resolvedCourse.documentId;
+      }
+    }
+
+    const updatedQuiz = await strapi.documents('api::quiz.quiz').update({
+      documentId: targetQuiz.documentId,
+      data: updatedData,
+      populate: ['course'],
+    });
+
+    return ctx.send({ data: updatedQuiz });
+  },
+
   async submitQuiz(ctx) {
     const user = ctx.state.user;
     const { quizId } = ctx.params;

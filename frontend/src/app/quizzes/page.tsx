@@ -14,7 +14,9 @@ export default function QuizStudioPage() {
   const [myCourses, setMyCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<QuizFormData>({
@@ -75,6 +77,45 @@ export default function QuizStudioPage() {
     loadData();
   }, [loadData]);
 
+  const handleOpenCreateModal = () => {
+    setEditingQuiz(null);
+    setFormData({
+      title: '',
+      description: '',
+      passing_score: 70,
+      course: myCourses[0]?.documentId || '',
+      questions: [
+        {
+          question: '',
+          options: ['', '', '', ''],
+          correct_option_index: 0,
+          explanation: '',
+        },
+      ],
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (quiz: Quiz) => {
+    setEditingQuiz(quiz);
+    const targetCourseDocId = quiz.course?.documentId || (typeof quiz.course === 'string' ? quiz.course : myCourses[0]?.documentId || '');
+    setFormData({
+      title: quiz.title || '',
+      description: quiz.description || '',
+      passing_score: quiz.passing_score || 70,
+      course: targetCourseDocId,
+      questions: quiz.questions && quiz.questions.length > 0 ? quiz.questions : [
+        {
+          question: '',
+          options: ['', '', '', ''],
+          correct_option_index: 0,
+          explanation: '',
+        },
+      ],
+    });
+    setIsModalOpen(true);
+  };
+
   const handleAddQuestion = () => {
     setFormData((prev) => ({
       ...prev,
@@ -129,8 +170,16 @@ export default function QuizStudioPage() {
 
     setSubmitting(true);
     try {
-      await quizApi.create(formData);
+      if (editingQuiz) {
+        await quizApi.update(editingQuiz.documentId, formData);
+        setToastMessage(`Quiz "${formData.title}" updated successfully!`);
+      } else {
+        await quizApi.create(formData);
+        setToastMessage(`Quiz "${formData.title}" created successfully!`);
+      }
+      setTimeout(() => setToastMessage(null), 3500);
       setIsModalOpen(false);
+      setEditingQuiz(null);
       setFormData({
         title: '',
         description: '',
@@ -147,7 +196,7 @@ export default function QuizStudioPage() {
       });
       loadData();
     } catch (err: any) {
-      alert(err?.message || 'Failed to create quiz.');
+      alert(err?.message || (editingQuiz ? 'Failed to update quiz.' : 'Failed to create quiz.'));
     } finally {
       setSubmitting(false);
     }
@@ -194,7 +243,7 @@ export default function QuizStudioPage() {
             </div>
 
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenCreateModal}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -210,9 +259,29 @@ export default function QuizStudioPage() {
                 boxShadow: '0 2px 6px rgba(180, 83, 9, 0.3)',
               }}
             >
-              <span>+ Create New MCQ Quiz</span>
+              <span>+ {editingQuiz ? 'Edit MCQ Quiz' : 'Create New MCQ Quiz'}</span>
             </button>
           </div>
+
+          {/* Toast Notification */}
+          {toastMessage && (
+            <div
+              style={{
+                backgroundColor: 'var(--success-soft)',
+                color: 'var(--success)',
+                border: '1px solid rgba(22, 163, 74, 0.25)',
+                borderRadius: '10px',
+                padding: '12px 18px',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <span>{toastMessage}</span>
+            </div>
+          )}
 
           {/* Quizzes List */}
           {loading ? (
@@ -237,7 +306,7 @@ export default function QuizStudioPage() {
                 Create multiple choice questions to test your students' understanding.
               </p>
               <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={handleOpenCreateModal}
                 style={{
                   padding: '10px 20px',
                   borderRadius: '8px',
@@ -299,22 +368,51 @@ export default function QuizStudioPage() {
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => handleDeleteQuiz(quiz)}
-                        title="Delete Quiz"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--danger)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                        }}
-                      >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                        </svg>
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          onClick={() => handleOpenEditModal(quiz)}
+                          title="Edit Quiz"
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
+                            backgroundColor: 'var(--canvas)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--ink-soft)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteQuiz(quiz)}
+                          title="Delete Quiz"
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '6px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: 'var(--danger)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
 
                     <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>

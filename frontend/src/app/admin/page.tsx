@@ -5,6 +5,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { adminApi } from '@/lib/api';
+import RoleChangeConfirmModal from '@/components/RoleChangeConfirmModal';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import { AdminStats, AdminUser } from '@/types/content';
 import Link from 'next/link';
 
@@ -24,6 +26,8 @@ export default function AdminPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [updatingUserId, setUpdatingUserId] = useState<number | string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{ user: AdminUser; newRole: string } | null>(null);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<AdminUser | null>(null);
 
   const loadAdminData = useCallback(async () => {
     try {
@@ -46,48 +50,44 @@ export default function AdminPage() {
     loadAdminData();
   }, [loadAdminData]);
 
-  const handleRoleChange = async (targetUser: AdminUser, newRole: string) => {
+  const handleRoleSelect = (targetUser: AdminUser, newRole: string) => {
     if (targetUser.role_type === newRole) return;
     if (targetUser.id === currentAdmin?.id && newRole !== 'admin') {
-      alert('You cannot demote your own active admin account.');
+      setToastMessage('⚠️ Action Blocked: You cannot demote your own active admin account.');
+      setTimeout(() => setToastMessage(null), 4000);
       return;
     }
 
-    if (!confirm(`Change role for "${targetUser.username}" from ${ROLE_COLORS[targetUser.role_type]?.label} to ${ROLE_COLORS[newRole]?.label}?`)) {
-      return;
-    }
+    setPendingRoleChange({ user: targetUser, newRole });
+  };
 
+  const handleConfirmRoleChange = async (targetUser: AdminUser, newRole: string) => {
     setUpdatingUserId(targetUser.id);
     try {
       await adminApi.updateUserRole(targetUser.id, newRole);
       setToastMessage(`Updated role for ${targetUser.username} to ${ROLE_COLORS[newRole]?.label}!`);
-      setTimeout(() => setToastMessage(null), 3000);
+      setTimeout(() => setToastMessage(null), 3500);
       loadAdminData();
-    } catch (err: any) {
-      alert(err?.message || 'Failed to update user role.');
     } finally {
       setUpdatingUserId(null);
     }
   };
 
-  const handleDeleteUser = async (targetUser: AdminUser) => {
+  const handleDeleteClick = (targetUser: AdminUser) => {
     if (targetUser.id === currentAdmin?.id) {
-      alert('You cannot delete your own active admin account.');
+      setToastMessage('Action Blocked: You cannot delete your own active admin account.');
+      setTimeout(() => setToastMessage(null), 4000);
       return;
     }
+    setPendingDeleteUser(targetUser);
+  };
 
-    if (!confirm(`Are you sure you want to permanently delete user "${targetUser.username}" (${targetUser.email})?`)) {
-      return;
-    }
-
-    try {
-      await adminApi.deleteUser(targetUser.id);
-      setToastMessage(`Deleted user ${targetUser.username}.`);
-      setTimeout(() => setToastMessage(null), 3000);
-      loadAdminData();
-    } catch (err: any) {
-      alert(err?.message || 'Failed to delete user.');
-    }
+  const handleConfirmDeleteUser = async () => {
+    if (!pendingDeleteUser) return;
+    await adminApi.deleteUser(pendingDeleteUser.id);
+    setToastMessage(`Deleted user ${pendingDeleteUser.username}.`);
+    setTimeout(() => setToastMessage(null), 3500);
+    loadAdminData();
   };
 
   const filteredUsers = users.filter((u) => {
@@ -416,7 +416,7 @@ export default function AdminPage() {
                             <select
                               value={u.role_type}
                               disabled={isUpdating}
-                              onChange={(e) => handleRoleChange(u, e.target.value)}
+                              onChange={(e) => handleRoleSelect(u, e.target.value)}
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: '6px',
@@ -440,7 +440,7 @@ export default function AdminPage() {
                           <td style={{ padding: '14px 24px', textAlign: 'right' }}>
                             {!isSelf && (
                               <button
-                                onClick={() => handleDeleteUser(u)}
+                                onClick={() => handleDeleteClick(u)}
                                 title="Delete User"
                                 style={{
                                   padding: '5px 10px',
@@ -532,6 +532,24 @@ export default function AdminPage() {
             </Link>
           </div>
         </div>
+        {/* Role Change Confirmation Modal */}
+        <RoleChangeConfirmModal
+          isOpen={!!pendingRoleChange}
+          onClose={() => setPendingRoleChange(null)}
+          onConfirm={handleConfirmRoleChange}
+          targetUser={pendingRoleChange?.user || null}
+          newRole={pendingRoleChange?.newRole || null}
+        />
+
+        {/* Delete User Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={!!pendingDeleteUser}
+          onClose={() => setPendingDeleteUser(null)}
+          onConfirm={handleConfirmDeleteUser}
+          title="Permanently Delete User"
+          message={`Are you sure you want to delete user "${pendingDeleteUser?.username}" (${pendingDeleteUser?.email})? This action cannot be undone.`}
+          itemType="User"
+        />
       </AppShell>
     </ProtectedRoute>
   );

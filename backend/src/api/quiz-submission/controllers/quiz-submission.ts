@@ -1,12 +1,6 @@
 /**
  * Quiz Submission Controller
- * 
- * Line-by-Line Reasoning:
- * 1. Submissions store the historic record of graded student quizzes with score and timestamp.
- * 2. Scoped Access:
- *    - Students can only view their own submissions (student.id === user.id).
- *    - Instructors can view submissions belonging to quizzes in their courses.
- *    - Admin and Content Manager have global visibility.
+ * Manages student quiz submissions with role-scoped access control.
  */
 
 import { factories } from '@strapi/strapi';

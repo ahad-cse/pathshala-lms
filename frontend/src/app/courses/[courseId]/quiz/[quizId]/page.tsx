@@ -190,7 +190,7 @@ export default function StudentQuizPage({ params }: PageProps) {
                     marginBottom: '8px',
                   }}
                 >
-                  {result.passed ? '🎉' : '📚'}
+                  {result.passed ? '' : '📚'}
                 </div>
 
                 <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>

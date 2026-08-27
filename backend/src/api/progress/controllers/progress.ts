@@ -1,16 +1,6 @@
 /**
- * Progress Tracking Controller
- * 
- * Line-by-Line Reasoning for Video Walkthrough:
- * 1. Progress tracking links a Student (User), a Lesson, and a Course with a completed_at timestamp.
- * 2. toggleLesson: Atomically flips a lesson between completed and uncompleted for the authenticated student.
- *    - If already completed, the record is removed (toggle off).
- *    - If not completed, a new Progress record is created (toggle on).
- * 3. Percentage Calculation:
- *    - Formula: Math.round((completed_lessons_count / total_lessons_in_course) * 100)
- *    - If a course has 0 lessons, percentage safely defaults to 0.
- *    - Accurate per student, persisted to the database, and verified across browser refresh.
- * 4. Role Scoping: Students only access and query their own progress records; Instructors can see progress in their courses.
+ * Progress Controller
+ * Manages lesson completion toggling and real-time course progress percentage tracking.
  */
 
 import { factories } from '@strapi/strapi';

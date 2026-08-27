@@ -1,12 +1,6 @@
 /**
- * Course Controller with Scoped Role Permissions
- * 
- * Reasoning:
- * 1. Admin and Content Manager have global CRUD access to all courses.
- * 2. Instructors are strictly scoped: they can create courses (auto-assigning themselves as instructor),
- *    and can only update/delete courses that they personally own (course.instructor.id === user.id).
- * 3. Any unauthorized attempt by an Instructor to edit another instructor's course returns 403 Forbidden.
- * 4. Students have read-only access (find/findOne) and cannot create/edit/delete courses.
+ * Course Controller
+ * Handles course catalog querying, nested relation populates, and instructor ownership permissions.
  */
 
 import { factories } from '@strapi/strapi';

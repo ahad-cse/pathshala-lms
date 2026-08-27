@@ -1,12 +1,6 @@
 /**
- * Lesson Controller with Course Ownership Verification
- * 
- * Reasoning:
- * 1. Admin and Content Manager can create/edit/delete any lesson across all courses.
- * 2. Instructors can only add lessons to their OWN courses, and only edit/delete lessons
- *    belonging to their own courses. Attempting to modify lessons in another instructor's
- *    course returns 403 Forbidden.
- * 3. Students have read-only access (find/findOne) to view lessons in sequence.
+ * Lesson Controller
+ * Handles lesson structuring, ordered sequence retrieval, and instructor ownership verification.
  */
 
 import { factories } from '@strapi/strapi';

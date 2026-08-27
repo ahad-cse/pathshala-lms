@@ -174,7 +174,7 @@ export default function BlogPage() {
   return (
     <AppShell
       title="Blog"
-      subtitle="Engineering essays, architectural walkthroughs, and learning resources"
+      subtitle="Engineering essays, in-depth tutorials, and learning resources"
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         {/* Toast Feedback */}

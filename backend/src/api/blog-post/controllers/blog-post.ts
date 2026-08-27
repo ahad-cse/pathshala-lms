@@ -1,16 +1,6 @@
 /**
- * Blog Post & Publication Controller with Draft / Published Security Filter
- * 
- * Line-by-Line Reasoning for Video Walkthrough:
- * 1. Draft Isolation: Drafts (is_published === false) must NEVER be exposed to public visitors, students, or instructors.
- * 2. Query Filtering (find):
- *    - For unauthenticated visitors, Students, and Instructors: An explicit backend database filter { is_published: { $eq: true } } is enforced.
- *    - For Admin and Content Manager: All articles are returned so they can manage drafts and toggle publication.
- * 3. Single Article Lookup (findOne):
- *    - Allows lookup by either documentId or unique URL slug.
- *    - If the article is a draft and the requester is not an Admin or Content Manager, returns 404 Not Found (zero draft leakage).
- * 4. Authoring Permissions (create, update, delete):
- *    - Strictly enforced on the backend: Only Admin and Content Manager roles can author or edit blog posts.
+ * Blog Post Controller
+ * Manages blog articles, draft/published filtering, and content authoring permissions.
  */
 
 import { factories } from '@strapi/strapi';

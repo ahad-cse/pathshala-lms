@@ -1,15 +1,6 @@
 /**
- * Admin Dashboard & Role Management Controller
- * 
- * Line-by-Line Reasoning for Video Walkthrough:
- * 1. Security Barrier: Every action begins by checking user.role_type === 'admin'. Non-admins are rejected with 403 Forbidden.
- * 2. getStats: Aggregates real-time counts across the platform:
- *    - Users grouped by role (Admin, Content Manager, Instructor, Student)
- *    - Total Courses, Lessons, Enrollments, Quizzes, and Student Submissions.
- * 3. getUsers: Retrieves full user directory with role_type metadata for administrative auditing.
- * 4. updateUserRole: Allows administrators to promote/demote user roles (e.g. promoting a student to instructor or content manager).
- *    Includes guard preventing the active admin from demoting themselves.
- * 5. deleteUser: Safely removes a user account, preventing active admin self-deletion.
+ * Admin Dashboard Controller
+ * Provides aggregate platform statistics and user role management endpoints.
  */
 
 import { Core } from '@strapi/strapi';

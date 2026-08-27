@@ -1,21 +1,6 @@
 /**
- * Quiz & Server-Side Auto-Grading Controller
- * 
- * Line-by-Line Grading Logic for Video Walkthrough:
- * 1. Client Submits Answers: The student client sends ONLY a map of selected option indices (e.g. { "0": 2, "1": 0 }).
- * 2. Server-Side Ground Truth: The backend retrieves the authentic Quiz record from the database containing correct_option_index.
- *    Client-supplied scores are NEVER trusted.
- * 3. Question Evaluation Loop:
- *    - Each question is checked: isCorrect = (submittedAnswerIndex === question.correct_option_index)
- *    - Correct answers are tallied: correctCount += 1
- * 4. Percentage & Pass Determination:
- *    - score = Math.round((correctCount / totalQuestions) * 100)
- *    - passed = score >= (quiz.passing_score || 70)
- * 5. Persistence:
- *    - A QuizSubmission entity is saved to the database linking student, quiz, score, passed, and answers.
- * 6. Scoped Authoring:
- *    - Admin / Content Manager can manage quizzes for any course.
- *    - Instructors can only create, update, or delete quizzes belonging to their own courses.
+ * Quiz Controller
+ * Handles quiz retrieval, scoped instructor authoring, and server-side auto-grading.
  */
 
 import { factories } from '@strapi/strapi';

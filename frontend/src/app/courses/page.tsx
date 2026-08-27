@@ -186,7 +186,6 @@ export default function CoursesPage() {
                 gap: '8px',
               }}
             >
-              <span>🎉</span>
               <span>{toastMessage} Redirecting to My Courses...</span>
             </div>
           )}
@@ -245,7 +244,7 @@ export default function CoursesPage() {
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
-                    Category: {cat}
+                    {cat === 'All' ? 'All Categories' : cat}
                   </option>
                 ))}
               </select>

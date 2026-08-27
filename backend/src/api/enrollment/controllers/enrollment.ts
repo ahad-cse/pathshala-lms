@@ -1,12 +1,6 @@
 /**
- * Enrollment Controller with Scoped Student & Instructor Access
- * 
- * Reasoning:
- * 1. Only users with the 'student' role are permitted to enroll in courses per the Permission Matrix.
- * 2. Self-enrollment automatically binds the authenticated student's user ID / documentId.
- * 3. Duplicate enrollments for the same course by the same student are prevented.
- * 4. Students can only query/list their own enrollments; Instructors can see enrollments in their own courses.
- * 5. Admin and Content Manager have global visibility.
+ * Enrollment Controller
+ * Handles student course enrollments, duplicate prevention, and enrollment records retrieval.
  */
 
 import { factories } from '@strapi/strapi';

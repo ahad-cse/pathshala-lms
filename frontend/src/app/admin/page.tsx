@@ -490,7 +490,7 @@ export default function AdminPage() {
             </Link>
 
             <Link
-              href="/instructor/quizzes"
+              href="/quizzes"
               style={{
                 backgroundColor: 'var(--surface)',
                 borderRadius: '14px',

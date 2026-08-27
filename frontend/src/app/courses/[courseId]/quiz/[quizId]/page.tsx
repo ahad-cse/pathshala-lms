@@ -152,7 +152,7 @@ export default function StudentQuizPage({ params }: PageProps) {
               }}
             >
               <span>🔍 <strong>Author Preview Mode ({user.role_type.replace('_', ' ').toUpperCase()})</strong>: You are previewing and testing the interactive student quiz flow.</span>
-              <Link href="/instructor/quizzes" style={{ color: 'var(--role-instructor)', fontWeight: 700, textDecoration: 'underline' }}>
+              <Link href="/quizzes" style={{ color: 'var(--role-instructor)', fontWeight: 700, textDecoration: 'underline' }}>
                 ← Return to Quiz Studio
               </Link>
             </div>

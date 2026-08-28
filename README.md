@@ -24,7 +24,7 @@
 ```mermaid
 flowchart LR
     %% Client Tier
-    subgraph Client ["Frontend (Next.js 15)"]
+    subgraph Client ["Frontend"]
         direction TB
         Auth["AuthContext • 1-Click Demo Login • JWT"]
         UI["4 Roles • Video Player • Auto Quiz • TipTap Blog • Admin Panel"]
@@ -35,7 +35,7 @@ flowchart LR
     Client -->|"REST API (JWT Bearer)"| API
 
     %% Backend Tier
-    subgraph API ["Backend (Strapi v5)"]
+    subgraph API ["Backend"]
         direction TB
         RBAC["RBAC Policy Guards"]
         Services["Courses • Progress Engine • Quiz Grader • Blog Studio"]

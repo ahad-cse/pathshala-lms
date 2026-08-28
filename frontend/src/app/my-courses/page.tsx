@@ -28,6 +28,11 @@ export default function MyCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(6);
 
+  // Filter out any orphaned enrollment records
+  const validEnrollments = (enrollments || []).filter(
+    (e) => Boolean(e && e.course && (e.course.documentId || e.course.id))
+  );
+
   const loadEnrollmentsAndProgress = useCallback(async () => {
     try {
       setLoading(true);
@@ -102,7 +107,7 @@ export default function MyCoursesPage() {
             <div>
 
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>
-                Enrolled Courses ({enrollments.length})
+                Enrolled Courses ({validEnrollments.length})
               </h2>
               <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
                 Pick up where you left off, stream lessons, track completion %, and earn credentials.
@@ -132,7 +137,7 @@ export default function MyCoursesPage() {
           {/* Enrolled Courses Grid */}
           {loading ? (
             <LoadingSpinner message="Loading your enrolled courses & progress..." minHeight="300px" />
-          ) : enrollments.length === 0 ? (
+          ) : validEnrollments.length === 0 ? (
             <div
               style={{
                 backgroundColor: 'var(--surface)',
@@ -170,7 +175,7 @@ export default function MyCoursesPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
-              {enrollments.slice(0, visibleCount).map((enrollment) => {
+              {validEnrollments.slice(0, visibleCount).map((enrollment) => {
                 const course = enrollment.course;
                 if (!course) return null;
 

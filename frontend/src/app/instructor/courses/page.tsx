@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi, quizApi } from '@/lib/api';
-import { Course, Lesson, Quiz } from '@/types/content';
+import { courseApi } from '@/lib/api';
+import { Course } from '@/types/content';
 import CourseModal from '@/components/CourseModal';
-import LessonModal from '@/components/LessonModal';
-import QuizModal from '@/components/QuizModal';
 import Link from 'next/link';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
@@ -16,27 +14,20 @@ export default function InstructorCoursesPage() {
   const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modals state
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
 
-  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
-  const [activeCourseForLesson, setActiveCourseForLesson] = useState<Course | null>(null);
-  const [lessonToEdit, setLessonToEdit] = useState<Lesson | null>(null);
-
-  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
-  const [activeCourseForQuiz, setActiveCourseForQuiz] = useState<Course | null>(null);
-  const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null);
-
   const [deleteModalState, setDeleteModalState] = useState<{
     isOpen: boolean;
-    type: 'course' | 'lesson' | 'quiz';
     id: string;
     title: string;
   }>({
     isOpen: false,
-    type: 'course',
     id: '',
     title: '',
   });
@@ -47,11 +38,15 @@ export default function InstructorCoursesPage() {
       const res = await courseApi.getAll();
       const allCourses: Course[] = res?.data || [];
 
-      // Filter courses strictly owned by this instructor (unless admin)
+      // Filter courses strictly assigned to this instructor (lead or co-instructor)
       const myCourses = allCourses.filter((c) => {
         const instId = c.instructor?.id;
         const instDocId = c.instructor?.documentId;
-        return (instId && instId === user?.id) || (instDocId && instDocId === user?.documentId);
+        const isLead = (instId && instId === user?.id) || (instDocId && instDocId === user?.documentId);
+        const isCo = c.co_instructors?.some(
+          (ci) => (ci.id && ci.id === user?.id) || (ci.documentId && ci.documentId === user?.documentId)
+        );
+        return isLead || isCo;
       });
 
       setCourses(myCourses);
@@ -76,141 +71,141 @@ export default function InstructorCoursesPage() {
     setIsCourseModalOpen(true);
   };
 
-  const handleOpenAddLesson = (course: Course) => {
-    setActiveCourseForLesson(course);
-    setLessonToEdit(null);
-    setIsLessonModalOpen(true);
-  };
-
-  const handleOpenEditLesson = (course: Course, lesson: Lesson) => {
-    setActiveCourseForLesson(course);
-    setLessonToEdit(lesson);
-    setIsLessonModalOpen(true);
-  };
-
-  const handleOpenAddQuiz = (course: Course) => {
-    setActiveCourseForQuiz(course);
-    setQuizToEdit(null);
-    setIsQuizModalOpen(true);
-  };
-
-  const handleOpenEditQuiz = (course: Course, quiz: Quiz) => {
-    setActiveCourseForQuiz(course);
-    setQuizToEdit(quiz);
-    setIsQuizModalOpen(true);
-  };
-
-  const handleDeleteQuizClick = (quiz: Quiz) => {
-    setDeleteModalState({
-      isOpen: true,
-      type: 'quiz',
-      id: quiz.documentId,
-      title: `Assessment Quiz: ${quiz.title}`,
-    });
-  };
-
   const handleDeleteCourseClick = (course: Course) => {
     setDeleteModalState({
       isOpen: true,
-      type: 'course',
       id: course.documentId,
       title: `Delete Course: "${course.title}"?`,
     });
   };
 
-  const handleDeleteLessonClick = (lesson: Lesson) => {
-    setDeleteModalState({
-      isOpen: true,
-      type: 'lesson',
-      id: lesson.documentId,
-      title: `Delete Lesson: "${lesson.title}"?`,
-    });
+  const handleConfirmDelete = async () => {
+    try {
+      await courseApi.delete(deleteModalState.id);
+      setToastMessage('Course deleted successfully.');
+      setTimeout(() => setToastMessage(null), 3000);
+      loadMyCourses();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete course.');
+    }
   };
 
-  const handleConfirmDelete = async () => {
-    if (deleteModalState.type === 'course') {
-      await courseApi.delete(deleteModalState.id);
-    } else if (deleteModalState.type === 'lesson') {
-      await lessonApi.delete(deleteModalState.id);
-    } else if (deleteModalState.type === 'quiz') {
-      await quizApi.delete(deleteModalState.id);
-    }
-    loadMyCourses();
-  };
+  // Categories list
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    courses.forEach((c) => {
+      if (c.category) cats.add(c.category);
+    });
+    return ['All', ...Array.from(cats)];
+  }, [courses]);
+
+  // Filtered courses
+  const filteredCourses = useMemo(() => {
+    return courses.filter((c) => {
+      const matchesSearch =
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.description && c.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCat = selectedCategory === 'All' || c.category === selectedCategory;
+      return matchesSearch && matchesCat;
+    });
+  }, [courses, searchQuery, selectedCategory]);
 
   return (
-    <ProtectedRoute allowedRoles={['instructor', 'admin']}>
+    <ProtectedRoute allowedRoles={['instructor']}>
       <AppShell
-        title="Instructor Studio"
-        subtitle={`Authored courses and lesson manager for ${user?.username || 'Instructor'}`}
+        title="Course Studio"
+        subtitle="Manage your assigned courses, curriculum modules, and interactive assessments."
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Header Action Banner */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Toast feedback */}
+          {toastMessage && (
+            <div
+              style={{
+                backgroundColor: 'var(--success-soft)',
+                color: 'var(--success)',
+                border: '1px solid rgba(22, 163, 74, 0.2)',
+                borderRadius: '10px',
+                padding: '12px 18px',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <span>{toastMessage}</span>
+            </div>
+          )}
+
+          {/* Header Controls: Search, Filter & Create Button */}
           <div
             style={{
               backgroundColor: 'var(--surface)',
-              borderRadius: '16px',
+              borderRadius: '14px',
               border: '1px solid var(--border)',
-              padding: '24px 28px',
+              padding: '16px 20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              position: 'relative',
-              overflow: 'hidden',
+              flexWrap: 'wrap',
+              gap: '12px',
             }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                backgroundColor: 'var(--role-instructor)',
-              }}
-            />
-
-            <div>
-              <div
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 'min(100%, 280px)', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                placeholder="Search your courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '2px 8px',
-                  borderRadius: '99px',
-                  backgroundColor: 'var(--role-instructor-soft)',
-                  color: 'var(--role-instructor)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  marginBottom: '8px',
+                  padding: '9px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--canvas)',
+                  fontSize: '13px',
+                  color: 'var(--ink)',
+                  outline: 'none',
+                  flex: 1,
+                  maxWidth: '320px',
+                }}
+              />
+
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--canvas)',
+                  fontSize: '13px',
+                  color: 'var(--ink)',
+                  outline: 'none',
                 }}
               >
-                <span></span>
-                <span>Instructor Authoring Portal</span>
-              </div>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>
-                My Authored Courses ({courses.length})
-              </h2>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
-                You have exclusive authoring rights to edit and manage lessons for these courses.
-              </p>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat === 'All' ? 'All Categories' : cat}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <button
               onClick={handleOpenCreateCourse}
+              className="btn-interactive"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '11px 20px',
-                borderRadius: '9px',
-                backgroundColor: 'var(--role-instructor)',
+                padding: '10px 18px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--primary)',
                 color: '#FFFFFF',
-                fontSize: '13.5px',
+                fontSize: '13px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(180, 83, 9, 0.3)',
+                boxShadow: '0 2px 6px rgba(242, 102, 42, 0.3)',
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -221,389 +216,250 @@ export default function InstructorCoursesPage() {
             </button>
           </div>
 
-          {/* Courses List */}
+          {/* Courses Card Grid */}
           {loading ? (
             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
-              Loading your authored courses...
+              Loading your assigned courses...
             </div>
-          ) : courses.length === 0 ? (
+          ) : filteredCourses.length === 0 ? (
             <div
               style={{
                 backgroundColor: 'var(--surface)',
-                borderRadius: '16px',
+                borderRadius: '14px',
                 border: '1px solid var(--border)',
                 padding: '48px 24px',
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}></div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px' }}>
-                You have not created any courses yet
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>
+                No courses found
               </h3>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', maxWidth: '440px', margin: '0 auto 20px' }}>
-                Click the button above to publish your first course and start adding sequential lessons.
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
+                {courses.length === 0
+                  ? 'You have not created or been assigned to any courses yet.'
+                  : 'Try adjusting your search query or category filter.'}
               </p>
-              <button
-                onClick={handleOpenCreateCourse}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  backgroundColor: 'var(--role-instructor)',
-                  color: '#FFFFFF',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                + Create Your First Course
-              </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {courses.map((course) => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
+              {filteredCourses.map((course) => {
                 const lessonsCount = course.lessons?.length || 0;
+                const quizzesCount = course.quizzes?.length || 0;
+                const enrollmentCount = (course.enrollments as any[])?.length || 0;
 
                 return (
                   <div
-                    key={course.documentId}
+                    key={course.documentId || course.id}
+                    className="interactive-card"
                     style={{
                       backgroundColor: 'var(--surface)',
                       borderRadius: '16px',
                       border: '1px solid var(--border)',
-                      padding: '24px',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.02)',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(0, 0, 0, 0.08)';
+                      e.currentTarget.style.borderColor = 'var(--primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.03)';
+                      e.currentTarget.style.borderColor = 'var(--border)';
                     }}
                   >
-                    {/* Course Header Bar */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                        <div
+                    {/* Card Cover Banner */}
+                    <div
+                      style={{
+                        height: '115px',
+                        background: `linear-gradient(135deg, ${course.cover_color || 'var(--primary)'} 0%, #0F172A 100%)`,
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {course.cover_image_url && (
+                        <img
+                          src={course.cover_image_url}
+                          alt={course.title}
+                          className="card-media"
                           style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '12px',
-                            backgroundColor: course.cover_color || 'var(--role-instructor)',
-                            color: '#FFFFFF',
-                            fontWeight: 800,
-                            fontSize: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            overflow: 'hidden',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
                           }}
-                        >
-                          {course.cover_image_url ? (
-                            <img
-                              src={course.cover_image_url}
-                              alt={course.title}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          ) : (
-                            course.title.charAt(0).toUpperCase()
-                          )}
-                        </div>
+                        />
+                      )}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: course.cover_image_url
+                            ? 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.7) 100%)'
+                            : 'transparent',
+                          padding: '14px 16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '3px 10px',
+                              borderRadius: '99px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              color: 'var(--ink)',
+                              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
+                            }}
+                          >
+                            {course.category || 'General'}
+                          </span>
 
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            <span
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleOpenEditCourse(course);
+                              }}
+                              title="Edit Course"
                               style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                                border: 'none',
                                 fontSize: '11px',
                                 fontWeight: 700,
-                                padding: '2px 8px',
-                                borderRadius: '6px',
-                                backgroundColor: 'var(--canvas)',
-                                border: '1px solid var(--border-soft)',
-                                color: 'var(--ink-soft)',
-                                textTransform: 'none',
+                                color: 'var(--ink)',
+                                cursor: 'pointer',
                               }}
                             >
-                              {course.category}
-                            </span>
-                            <span style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>
-                              • {lessonsCount} {lessonsCount === 1 ? 'Lesson' : 'Lessons'}
-                            </span>
+                              Edit
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleDeleteCourseClick(course);
+                              }}
+                              title="Delete Course"
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(220, 38, 38, 0.92)',
+                                border: 'none',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: '#FFFFFF',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Delete
+                            </button>
                           </div>
+                        </div>
 
-                          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+                        <Link
+                          href={`/courses/${course.documentId}`}
+                          style={{ textDecoration: 'none' }}
+                        >
+                          <h3
+                            style={{
+                              fontSize: '16px',
+                              fontWeight: 800,
+                              color: '#FFFFFF',
+                              margin: 0,
+                              textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)',
+                              lineHeight: 1.3,
+                            }}
+                          >
                             {course.title}
                           </h3>
-
-                          <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: '4px 0 0', lineHeight: 1.4 }}>
-                            {course.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Course Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <button
-                          onClick={() => handleOpenAddLesson(course)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            backgroundColor: 'var(--primary)',
-                            color: '#FFFFFF',
-                            fontSize: '12.5px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            border: 'none',
-                          }}
-                        >
-                          + Add Lesson
-                        </button>
-
-                        <button
-                          onClick={() => handleOpenEditCourse(course)}
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            backgroundColor: 'var(--canvas)',
-                            border: '1px solid var(--border)',
-                            color: 'var(--ink)',
-                            fontSize: '12.5px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteCourseClick(course)}
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            backgroundColor: 'var(--danger-soft)',
-                            border: '1px solid rgba(220, 38, 38, 0.2)',
-                            color: 'var(--danger)',
-                            fontSize: '12.5px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Delete
-                        </button>
+                        </Link>
                       </div>
                     </div>
 
-                    {/* Lessons Management Table */}
-                    <div
-                      style={{
-                        backgroundColor: 'var(--canvas)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border-soft)',
-                        padding: '14px',
-                      }}
-                    >
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '10px' }}>
-                        Curriculum Lessons
+                    {/* Card Body */}
+                    <div style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <p
+                        style={{
+                          fontSize: '13px',
+                          color: 'var(--ink-soft)',
+                          margin: 0,
+                          lineHeight: 1.5,
+                          flex: 1,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {course.description || 'Structured lessons, modules, and assessment quizzes.'}
+                      </p>
+
+                      {/* Metrics Bar */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          borderTop: '1px solid var(--border-soft)',
+                          paddingTop: '12px',
+                          fontSize: '12px',
+                          color: 'var(--ink-soft)',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <strong style={{ color: 'var(--primary)', fontWeight: 800 }}>{lessonsCount}</strong> {lessonsCount === 1 ? 'Lesson' : 'Lessons'}
+                        </span>
+                        <span style={{ color: 'var(--border)' }}>•</span>
+                        <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <strong style={{ color: 'var(--role-instructor)', fontWeight: 800 }}>{quizzesCount}</strong> {quizzesCount === 1 ? 'Quiz' : 'Quizzes'}
+                        </span>
+                        {enrollmentCount > 0 && (
+                          <>
+                            <span style={{ color: 'var(--border)' }}>•</span>
+                            <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <strong style={{ color: '#16A34A', fontWeight: 800 }}>{enrollmentCount}</strong> Enrolled
+                            </span>
+                          </>
+                        )}
                       </div>
 
-                      {lessonsCount === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '16px', fontSize: '12.5px', color: 'var(--ink-faint)' }}>
-                          No lessons added yet. Click "+ Add Lesson" to build your course curriculum.
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {course.lessons
-                            ?.sort((a, b) => (a.order || 0) - (b.order || 0))
-                            .map((lesson, idx) => (
-                              <div
-                                key={lesson.documentId || idx}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '10px 14px',
-                                  borderRadius: '8px',
-                                  backgroundColor: 'var(--surface)',
-                                  border: '1px solid var(--border)',
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                                  <span
-                                    style={{
-                                      width: '24px',
-                                      height: '24px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--role-instructor-soft)',
-                                      color: 'var(--role-instructor)',
-                                      fontSize: '12px',
-                                      fontWeight: 800,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    {lesson.order || idx + 1}
-                                  </span>
-
-                                  <div>
-                                    <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>
-                                      {lesson.title}
-                                    </div>
-                                    {lesson.video_url && (
-                                      <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '2px' }}>
-                                        Video Link Attached
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <button
-                                    onClick={() => handleOpenEditLesson(course, lesson)}
-                                    style={{
-                                      padding: '5px 10px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--canvas)',
-                                      border: '1px solid var(--border)',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      color: 'var(--ink)',
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Edit Lesson
-                                  </button>
-
-                                  <button
-                                    onClick={() => handleDeleteLessonClick(lesson)}
-                                    style={{
-                                      padding: '5px 10px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--danger-soft)',
-                                      border: '1px solid rgba(220, 38, 38, 0.2)',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      color: 'var(--danger)',
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-
-                      {/* Course Assessment Quiz Management Section */}
-                      <div style={{ marginTop: '16px', borderTop: '1px dashed var(--border)', paddingTop: '14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--role-instructor)', textTransform: 'none' }}>
-                            Final Assessment Quiz
-                          </div>
-
-                          {(!course.quizzes || course.quizzes.length === 0) && (
-                            <button
-                              onClick={() => handleOpenAddQuiz(course)}
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                backgroundColor: 'var(--role-instructor-soft)',
-                                color: 'var(--role-instructor)',
-                                fontSize: '11.5px',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                border: '1px solid rgba(180, 83, 9, 0.25)',
-                              }}
-                            >
-                              + Create & Attach Quiz
-                            </button>
-                          )}
-                        </div>
-
-                        {course.quizzes && course.quizzes.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {course.quizzes.map((q) => (
-                              <div
-                                key={q.documentId || q.id}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  padding: '12px 16px',
-                                  borderRadius: '8px',
-                                  backgroundColor: 'var(--surface)',
-                                  border: '1.5px solid rgba(180, 83, 9, 0.3)',
-                                  gap: '10px',
-                                }}
-                              >
-                                <div>
-                                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span></span>
-                                    <span>{q.title}</span>
-                                  </div>
-                                  <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', marginTop: '2px' }}>
-                                    {q.questions?.length || 0} Questions • Passing Threshold: <strong style={{ color: 'var(--ink)' }}>{q.passing_score}%</strong>
-                                  </div>
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <Link
-                                    href={`/courses/${course.documentId}/quizzes/${q.documentId}`}
-                                    style={{
-                                      padding: '6px 12px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--canvas)',
-                                      border: '1px solid var(--border)',
-                                      color: 'var(--ink)',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      textDecoration: 'none',
-                                    }}
-                                  >
-                                    Preview Experience →
-                                  </Link>
-
-                                  <button
-                                    onClick={() => handleOpenEditQuiz(course, q)}
-                                    style={{
-                                      padding: '6px 12px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--canvas)',
-                                      border: '1px solid var(--border)',
-                                      color: 'var(--ink)',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Edit Quiz
-                                  </button>
-
-                                  <button
-                                    onClick={() => handleDeleteQuizClick(q)}
-                                    style={{
-                                      padding: '6px 10px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                                      border: '1px solid rgba(239, 68, 68, 0.2)',
-                                      color: 'var(--danger)',
-                                      fontSize: '12px',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                    }}
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{ padding: '12px', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>
-                              No final assessment quiz attached. Attach an MCQ quiz to evaluate students upon course completion.
-                            </span>
-                          </div>
-                        )}
+                      {/* Manage Curriculum Button */}
+                      <div style={{ marginTop: 'auto' }}>
+                        <Link
+                          href={`/courses/${course.documentId}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            width: '100%',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--primary)',
+                            color: '#FFFFFF',
+                            fontWeight: 700,
+                            fontSize: '13px',
+                            textDecoration: 'none',
+                            boxSizing: 'border-box',
+                            boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
+                          }}
+                        >
+                          <span>Manage Curriculum →</span>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -621,38 +477,14 @@ export default function InstructorCoursesPage() {
           courseToEdit={courseToEdit}
         />
 
-        {/* Lesson Modal */}
-        {activeCourseForLesson && (
-          <LessonModal
-            isOpen={isLessonModalOpen}
-            onClose={() => setIsLessonModalOpen(false)}
-            onSuccess={loadMyCourses}
-            targetCourse={activeCourseForLesson}
-            lessonToEdit={lessonToEdit}
-            defaultOrder={(activeCourseForLesson.lessons?.length || 0) + 1}
-          />
-        )}
-
-        {/* Quiz Modal */}
-        {activeCourseForQuiz && (
-          <QuizModal
-            isOpen={isQuizModalOpen}
-            onClose={() => setIsQuizModalOpen(false)}
-            onSuccess={loadMyCourses}
-            courseDocumentId={activeCourseForQuiz.documentId}
-            courseTitle={activeCourseForQuiz.title}
-            quiz={quizToEdit}
-          />
-        )}
-
         {/* Delete Confirmation Modal */}
         <DeleteConfirmModal
           isOpen={deleteModalState.isOpen}
           onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
           onConfirm={handleConfirmDelete}
           title={deleteModalState.title}
-          message={`Are you sure you want to delete this ${deleteModalState.type}?`}
-          itemType={deleteModalState.type}
+          message="Are you sure you want to delete this course? This action cannot be undone."
+          itemType="course"
         />
       </AppShell>
     </ProtectedRoute>

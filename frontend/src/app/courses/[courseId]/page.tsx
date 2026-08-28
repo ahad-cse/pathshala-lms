@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { courseApi, lessonApi, enrollmentApi, quizApi, progressApi } from '@/lib/api';
@@ -34,7 +35,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
   const [courseProgressPercent, setCourseProgressPercent] = useState<number | null>(null);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'curriculum' | 'instructor' | 'students' | 'overview'>('curriculum');
+  const [activeTab, setActiveTab] = useState<'curriculum' | 'instructor' | 'students'>('curriculum');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modals state
@@ -100,11 +101,16 @@ export default function CourseDetailsPage({ params }: PageProps) {
   }, [loadCourseData]);
 
   // Ownership verification
+  const isInstructor = (role || user?.role_type) === 'instructor';
   const isOwner =
-    user?.role_type === 'instructor' &&
-    ((course?.instructor?.id && course.instructor.id === user.id) ||
-      (course?.instructor?.documentId && course.instructor.documentId === user.documentId) ||
-      course?.co_instructors?.some((ci) => ci.id === user.id || ci.documentId === user.documentId));
+    isInstructor &&
+    Boolean(
+      (course?.instructor?.id && course.instructor.id === user?.id) ||
+      (course?.instructor?.documentId && course.instructor.documentId === user?.documentId) ||
+      course?.co_instructors?.some(
+        (ci) => (ci.id && ci.id === user?.id) || (ci.documentId && ci.documentId === user?.documentId)
+      )
+    );
 
   const isManaged = role === 'admin' || role === 'content_manager' || isOwner;
 
@@ -139,37 +145,108 @@ export default function CourseDetailsPage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <AppShell>
-        <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--ink-soft)' }}>
-          Loading course details and curriculum...
-        </div>
-      </AppShell>
+      <ProtectedRoute>
+        <AppShell>
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--ink-soft)' }}>
+            Loading course details and curriculum...
+          </div>
+        </AppShell>
+      </ProtectedRoute>
     );
   }
 
   if (!course) {
     return (
-      <AppShell>
-        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)' }}>Course Not Found</h2>
-          <p style={{ color: 'var(--ink-soft)', marginTop: '8px' }}>The requested course could not be located.</p>
-          <Link
-            href="/courses"
+      <ProtectedRoute>
+        <AppShell>
+          <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)' }}>Course Not Found</h2>
+            <p style={{ color: 'var(--ink-soft)', marginTop: '8px' }}>The requested course could not be located.</p>
+            <Link
+              href={isInstructor ? "/instructor/courses" : "/courses"}
+              style={{
+                display: 'inline-block',
+                marginTop: '16px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--primary)',
+                color: '#FFFFFF',
+                textDecoration: 'none',
+                fontWeight: 700,
+              }}
+            >
+              {isInstructor ? '← Back to Course Studio' : '← Back to Course Catalog'}
+            </Link>
+          </div>
+        </AppShell>
+      </ProtectedRoute>
+    );
+  }
+
+  // Restrict unassigned instructors from viewing other courses
+  if (course && isInstructor && !isOwner) {
+    return (
+      <ProtectedRoute>
+        <AppShell>
+          <div
             style={{
-              display: 'inline-block',
-              marginTop: '16px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              backgroundColor: 'var(--primary)',
-              color: '#FFFFFF',
-              textDecoration: 'none',
-              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '60vh',
+              padding: '24px',
+              textAlign: 'center',
             }}
           >
-            ← Back to Course Catalog
-          </Link>
-        </div>
-      </AppShell>
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '16px',
+                backgroundColor: 'var(--danger-soft)',
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '16px',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+
+            <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>
+              Access Restricted (403 Forbidden)
+            </h2>
+
+            <p style={{ maxWidth: '460px', fontSize: '13.5px', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.5 }}>
+              You are signed in as an Instructor, but you are not assigned to this course. You can only view and manage courses assigned to your profile.
+            </p>
+
+            <Link
+              href="/instructor/courses"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 18px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--primary)',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: '13px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
+              }}
+            >
+              ← Go to Course Studio
+            </Link>
+          </div>
+        </AppShell>
+      </ProtectedRoute>
     );
   }
 
@@ -180,7 +257,8 @@ export default function CourseDetailsPage({ params }: PageProps) {
   const attachedQuiz = quizzesList.length > 0 ? quizzesList[0] : null;
 
   return (
-    <AppShell>
+    <ProtectedRoute>
+      <AppShell>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Toast Notification */}
         {toastMessage && (
@@ -448,25 +526,10 @@ export default function CourseDetailsPage({ params }: PageProps) {
                 transition: 'all 0.15s ease',
               }}
             >
-              Instructors & Faculty
+              Instructors
             </button>
 
-            <button
-              onClick={() => setActiveTab('overview')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '7px',
-                backgroundColor: activeTab === 'overview' ? 'var(--primary)' : 'transparent',
-                color: activeTab === 'overview' ? '#FFFFFF' : 'var(--ink-soft)',
-                fontWeight: 700,
-                fontSize: '13px',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              Course Overview
-            </button>
+
           </div>
         )}
 
@@ -882,114 +945,53 @@ export default function CourseDetailsPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* Tab: Instructors & Faculty */}
-        {activeTab === 'instructor' && (
-          <div
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: '16px',
-              border: '1px solid var(--border)',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '24px',
-            }}
-          >
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
-                Course Instructors & Faculty Team
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
-                Meet the verified domain experts and educators directing and delivering this course curriculum.
-              </p>
-            </div>
+        {/* Tab: Instructors */}
+        {activeTab === 'instructor' && (() => {
+          const allInstructors = [
+            course.instructor,
+            ...(course.co_instructors || []),
+          ].filter((inst) => {
+            if (!inst) return false;
+            // Exclude content managers or admins if legacy data had them linked
+            if (inst.role_type === 'content_manager' || inst.role_type === 'admin') return false;
+            return true;
+          }) as any[];
 
-            {/* 1. Primary / Lead Instructor */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
-                Primary Lead Instructor
+          return (
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: '16px',
+                border: '1px solid var(--border)',
+                padding: '28px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
+                  Course Instructors ({allInstructors.length})
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0 }}>
+                  Assigned instructors conducting and delivering this course curriculum.
+                </p>
               </div>
 
-              <div
-                style={{
-                  backgroundColor: 'var(--canvas)',
-                  border: '1.5px solid var(--role-instructor)',
-                  borderRadius: '14px',
-                  padding: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '18px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div
-                  style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--role-instructor-soft)',
-                    color: 'var(--role-instructor)',
-                    fontWeight: 800,
-                    fontSize: '22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {course.instructor?.username?.charAt(0).toUpperCase() || 'I'}
-                </div>
-
-                <div style={{ flex: 1, minWidth: '220px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
-                      {course.instructor?.full_name || course.instructor?.username || 'Staff Instructor'}
-                    </h4>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '99px',
-                        backgroundColor: 'var(--role-instructor)',
-                        color: '#FFFFFF',
-                      }}
-                    >
-                      Lead Course Director
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: '12.5px', color: 'var(--ink-faint)', marginTop: '3px' }}>
-                    {course.instructor?.email || 'instructor@pathshala.edu'}
-                  </div>
-
-                  <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: '10px 0 0', lineHeight: 1.5 }}>
-                    {(course.instructor as any)?.bio ||
-                      'Senior software engineer and educator specializing in web architectures, software design patterns, and interactive curricula.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Co-Instructors & Teaching Faculty */}
-            {course.co_instructors && course.co_instructors.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
-                  Co-Instructors & Teaching Faculty ({course.co_instructors.length})
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
-                  {course.co_instructors.map((coInst) => (
+              {/* Grid of Assigned Instructors */}
+              {allInstructors.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '16px' }}>
+                  {allInstructors.map((inst, idx) => (
                     <div
-                      key={coInst.documentId || coInst.id}
+                      key={inst.documentId || inst.id || idx}
                       style={{
                         backgroundColor: 'var(--canvas)',
                         border: '1px solid var(--border)',
-                        borderRadius: '12px',
-                        padding: '16px',
+                        borderRadius: '14px',
+                        padding: '20px',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '14px',
+                        alignItems: 'flex-start',
+                        gap: '16px',
                       }}
                     >
                       <div
@@ -1000,51 +1002,54 @@ export default function CourseDetailsPage({ params }: PageProps) {
                           backgroundColor: 'var(--role-instructor-soft)',
                           color: 'var(--role-instructor)',
                           fontWeight: 800,
-                          fontSize: '17px',
+                          fontSize: '18px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
                         }}
                       >
-                        {coInst.username.charAt(0).toUpperCase()}
+                        {(inst.full_name || inst.username || 'I').charAt(0).toUpperCase()}
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--ink)' }}>
-                            {coInst.full_name || coInst.username}
-                          </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+                            {inst.full_name || inst.username}
+                          </h4>
                           <span
                             style={{
-                              fontSize: '10px',
+                              fontSize: '10.5px',
                               fontWeight: 700,
-                              padding: '1px 6px',
-                              borderRadius: '4px',
-                              backgroundColor: 'var(--canvas)',
-                              border: '1px solid var(--border-soft)',
-                              color: 'var(--ink-soft)',
+                              padding: '2px 7px',
+                              borderRadius: '99px',
+                              backgroundColor: 'var(--role-instructor-soft)',
+                              color: 'var(--role-instructor)',
                             }}
                           >
-                            Faculty
+                            Instructor
                           </span>
                         </div>
-                        <div style={{ fontSize: '12px', color: 'var(--ink-faint)', marginTop: '2px' }}>
-                          {coInst.email}
+
+                        <div style={{ fontSize: '12px', color: 'var(--ink-faint)', marginTop: '3px' }}>
+                          {inst.email}
                         </div>
-                        {coInst.bio && (
-                          <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '6px', lineHeight: 1.4 }}>
-                            {coInst.bio}
-                          </div>
-                        )}
+
+                        <p style={{ fontSize: '12.5px', color: 'var(--ink-soft)', margin: '8px 0 0', lineHeight: 1.45 }}>
+                          {inst.bio || 'Experienced competitive programming mentor and educator delivering structured algorithmic problem solving and contest techniques.'}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              ) : (
+                <div style={{ padding: '32px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '13.5px' }}>
+                  No instructors currently assigned to this course.
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Tab 2: Enrolled Students & Progress Table (Restricted to Course Managers) */}
         {activeTab === 'students' && isManaged && (
@@ -1055,51 +1060,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
           />
         )}
 
-        {/* Tab 3: Overview & Details */}
-        {activeTab === 'overview' && (
-          <div
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: '16px',
-              border: '1px solid var(--border)',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-            }}
-          >
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px' }}>
-                About this Course
-              </h3>
-              <p style={{ fontSize: '14px', color: 'var(--ink-soft)', lineHeight: 1.6, margin: 0 }}>
-                {course.description || 'Master modern full-stack development methodologies with industry-tested patterns and hands-on modular lessons.'}
-              </p>
-            </div>
 
-            <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '16px' }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>
-                Course Specifications
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--canvas)', border: '1px solid var(--border-soft)' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 600 }}>Category</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', marginTop: '2px' }}>{course.category}</div>
-                </div>
-                <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--canvas)', border: '1px solid var(--border-soft)' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 600 }}>Total Curriculum Lessons</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', marginTop: '2px' }}>{lessonsCount} Video Modules</div>
-                </div>
-                <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'var(--canvas)', border: '1px solid var(--border-soft)' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--ink-faint)', fontWeight: 600 }}>Assessment Requirement</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', marginTop: '2px' }}>
-                    {attachedQuiz ? `Passing Score: ${attachedQuiz.passing_score}%` : 'Standard Completion'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Course Modal */}
         <CourseModal
@@ -1154,5 +1115,6 @@ export default function CourseDetailsPage({ params }: PageProps) {
         )}
       </div>
     </AppShell>
+    </ProtectedRoute>
   );
 }

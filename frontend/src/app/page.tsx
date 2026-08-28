@@ -447,12 +447,12 @@ export default function HomePage() {
                 </svg>
               ),
               features: [
-                'Platform Article & Guide Authoring',
+                'Platform Blog & Guide Authoring',
                 'Draft vs Live Mode State Control',
                 'Global Curriculum Categorization',
               ],
               actionUrl: '/blog',
-              actionLabel: 'Manage Articles',
+              actionLabel: 'Manage Blogs',
             },
             {
               role: 'admin',
@@ -852,14 +852,21 @@ export default function HomePage() {
 
                       let ctaLabel = 'Enroll Now';
                       let ctaColor = 'var(--primary)';
+                      let ctaHref = !user ? '/login' : `/courses/${course.documentId}`;
 
                       if (isManager) {
                         ctaLabel = 'Manage Course';
+                        ctaHref = `/courses/${course.documentId}`;
                       } else if (role === 'instructor') {
                         ctaLabel = isAuthor ? 'Manage Course' : 'View Course';
+                        ctaHref = `/courses/${course.documentId}`;
                       } else if (isEnrolled) {
                         ctaLabel = 'Continue Learning';
                         ctaColor = '#16A34A';
+                        ctaHref = `/courses/${course.documentId}`;
+                      } else if (!user) {
+                        ctaLabel = 'Enroll Now';
+                        ctaHref = '/login';
                       }
 
                       return (
@@ -891,7 +898,7 @@ export default function HomePage() {
                           )}
 
                           <Link
-                            href={`/courses/${course.documentId}`}
+                            href={ctaHref}
                             style={{
                               fontSize: '13px',
                               fontWeight: 700,
@@ -969,7 +976,7 @@ export default function HomePage() {
                 Latest Publications & Engineering Guides
               </h2>
               <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: 0 }}>
-                Articles, architectural patterns, and tutorials authored by our content team
+                Blogs, architectural patterns, and tutorials authored by our content team
               </p>
             </div>
 
@@ -985,7 +992,7 @@ export default function HomePage() {
                 gap: '4px',
               }}
             >
-              View All Articles →
+              View All Blogs →
             </Link>
           </div>
 
@@ -1025,7 +1032,7 @@ export default function HomePage() {
                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', gap: '16px' }}>
                   <div>
                     <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', marginBottom: '8px' }}>
-                      {post.published_date ? new Date(post.published_date).toLocaleDateString() : 'Published'} • By {post.author?.username || 'Editorial Team'}
+                      {post.published_date ? new Date(post.published_date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Published'}
                     </div>
 
                     <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', lineHeight: 1.35 }}>
@@ -1089,7 +1096,7 @@ export default function HomePage() {
                   e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
                 }}
               >
-                <span>Load More Articles</span>
+                <span>Load More Blogs</span>
                 <span>↓</span>
               </button>
             </div>

@@ -53,10 +53,10 @@ export default function MyCoursesPage() {
   }, [loadEnrollmentsAndProgress]);
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['student']}>
       <AppShell
         title="My Enrolled Courses & Progress"
-        subtitle={`Learning tracks and live completion status for ${user?.username || 'Student'}`}
+        subtitle={`Live completion progress and enrolled curriculum for ${user?.username || 'Student'}`}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Header Banner */}
@@ -87,24 +87,7 @@ export default function MyCoursesPage() {
             />
 
             <div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '2px 8px',
-                  borderRadius: '99px',
-                  backgroundColor: 'var(--role-student-soft)',
-                  color: 'var(--role-student)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  marginBottom: '8px',
-                }}
-              >
-                <span></span>
-                <span>Active Learning Tracks</span>
-              </div>
+
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>
                 Enrolled Courses ({enrollments.length})
               </h2>
@@ -187,9 +170,7 @@ export default function MyCoursesPage() {
                 const percentage = courseProgress?.percentage || 0;
                 const completedCount = courseProgress?.completedLessons || 0;
 
-                const targetUrl = firstLesson
-                  ? `/courses/${course.documentId}/lessons/${firstLesson.documentId}`
-                  : `/courses`;
+                const targetUrl = `/courses/${course.documentId}`;
 
                 return (
                   <div
@@ -261,9 +242,11 @@ export default function MyCoursesPage() {
                           {course.category}
                         </span>
 
-                        <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#FFFFFF', lineHeight: 1.25 }}>
-                          {course.title}
-                        </h3>
+                        <Link href={targetUrl} style={{ textDecoration: 'none' }}>
+                          <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#FFFFFF', lineHeight: 1.25 }}>
+                            {course.title}
+                          </h3>
+                        </Link>
                       </div>
                     </div>
 
@@ -325,7 +308,7 @@ export default function MyCoursesPage() {
                           boxShadow: percentage === 100 ? 'none' : '0 2px 6px rgba(242, 102, 42, 0.3)',
                         }}
                       >
-                        <span>{percentage === 100 ? '✓ Review Course Content' : percentage > 0 ? 'Continue Learning' : 'Start Learning'}</span>
+                        <span>{percentage === 100 ? 'View Course Details →' : 'Continue Learning →'}</span>
                       </Link>
                     </div>
                   </div>

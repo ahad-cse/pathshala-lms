@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useParams } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
@@ -27,8 +28,8 @@ export default function SingleBlogPage() {
         const res = await blogApi.getOne(slug);
         setPost(res.data);
       } catch (err: any) {
-        console.error('Failed to load article:', err);
-        setError(err?.message || 'Article not found or unpublished.');
+        console.error('Failed to load blog:', err);
+        setError(err?.message || 'Blog not found or in draft mode.');
       } finally {
         setLoading(false);
       }
@@ -194,9 +195,10 @@ export default function SingleBlogPage() {
   };
 
   return (
-    <AppShell
+    <ProtectedRoute>
+      <AppShell
       title={post?.title || 'Knowledge Publication'}
-      subtitle={post ? `Published by ${post.author?.username || 'Editorial Team'}` : 'PathShala LMS'}
+      subtitle={post ? (post.published_date ? `Published on ${new Date(post.published_date).toLocaleDateString(undefined, { dateStyle: 'long' })}` : 'Draft Publication') : 'PathShala LMS'}
     >
       <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Navigation Breadcrumb */}
@@ -236,7 +238,7 @@ export default function SingleBlogPage() {
 
         {loading ? (
           <div style={{ padding: '80px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
-            Loading article...
+            Loading blog...
           </div>
         ) : error || !post ? (
           <div
@@ -250,10 +252,10 @@ export default function SingleBlogPage() {
           >
             <div style={{ fontSize: '40px', marginBottom: '12px' }}></div>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px' }}>
-              Article Not Accessible
+              Blog Not Accessible
             </h3>
             <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: '0 0 20px' }}>
-              {error || 'This article is currently an unpublished draft or does not exist.'}
+              {error || 'This blog is currently in draft mode or does not exist.'}
             </p>
             <Link
               href="/blog"
@@ -268,7 +270,7 @@ export default function SingleBlogPage() {
                 textDecoration: 'none',
               }}
             >
-              Browse Published Articles
+              Browse Published Blogs
             </Link>
           </div>
         ) : (
@@ -294,44 +296,32 @@ export default function SingleBlogPage() {
             )}
 
             <div style={{ padding: '36px 40px' }}>
-              {/* Metadata */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '13px',
-                  color: 'var(--ink-faint)',
-                  marginBottom: '16px',
-                  borderBottom: '1px solid var(--border-soft)',
-                  paddingBottom: '16px',
-                }}
-              >
+              {/* Metadata: Date */}
+              {post.published_date && (
                 <div
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--role-content-soft)',
-                    color: 'var(--role-content)',
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 800,
+                    gap: '6px',
                     fontSize: '12px',
+                    fontWeight: 600,
+                    color: 'var(--ink-faint)',
+                    marginBottom: '16px',
+                    backgroundColor: 'var(--canvas)',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-soft)',
                   }}
                 >
-                  {(post.author?.username || 'A').slice(0, 2).toUpperCase()}
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>{new Date(post.published_date).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, color: 'var(--ink)' }}>
-                    {post.author?.username || 'Editorial Team'}
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)' }}>
-                    {post.published_date ? new Date(post.published_date).toLocaleDateString(undefined, { dateStyle: 'long' }) : 'Draft'}
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Title & Excerpt */}
               <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 12px', lineHeight: 1.3 }}>
@@ -425,5 +415,6 @@ export default function SingleBlogPage() {
         }
       `}</style>
     </AppShell>
+    </ProtectedRoute>
   );
 }

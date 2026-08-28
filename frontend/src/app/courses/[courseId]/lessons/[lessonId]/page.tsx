@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import React, { useEffect, useState, useCallback, use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi, progressApi, quizApi } from '@/lib/api';
+import { courseApi, lessonApi, progressApi, quizApi, enrollmentApi } from '@/lib/api';
 import { Course, CourseProgress, Lesson, Quiz } from '@/types/content';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,8 @@ export default function LessonViewerPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const { courseId, lessonId } = resolvedParams;
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isStudent = (role || user?.role_type) === 'student';
 
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -30,22 +31,26 @@ export default function LessonViewerPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [togglingProgress, setTogglingProgress] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState<boolean | null>(null);
 
   const loadLessonData = useCallback(async () => {
     try {
       setLoading(true);
-      const [courseRes, lessonRes, progressRes, quizRes] = await Promise.all([
+      const [courseRes, lessonRes, enrollRes, progressRes, quizRes] = await Promise.all([
         courseApi.getOne(courseId),
         lessonApi.getOne(lessonId),
-        progressApi.getCourseProgress(courseId).catch(() => ({
-          data: {
-            courseId,
-            totalLessons: 0,
-            completedLessons: 0,
-            percentage: 0,
-            completedLessonIds: [],
-          },
-        })),
+        isStudent ? enrollmentApi.getMyEnrollments().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+        isStudent
+          ? progressApi.getCourseProgress(courseId).catch(() => ({
+              data: {
+                courseId,
+                totalLessons: 0,
+                completedLessons: 0,
+                percentage: 0,
+                completedLessonIds: [],
+              },
+            }))
+          : Promise.resolve({ data: null }),
         quizApi.getByCourse(courseId).catch(() => ({ data: [] })),
       ]);
 
@@ -53,12 +58,24 @@ export default function LessonViewerPage({ params }: PageProps) {
       setCurrentLesson(lessonRes.data);
       setProgress(progressRes.data);
       setQuizzes(quizRes.data || []);
+
+      if (isStudent) {
+        const myEnrollments = enrollRes.data || [];
+        const matched = myEnrollments.some(
+          (e: any) =>
+            (e.course as any)?.documentId === courseId ||
+            String((e.course as any)?.id) === String(courseRes.data?.id)
+        );
+        setIsEnrolled(matched);
+      } else {
+        setIsEnrolled(true);
+      }
     } catch (err) {
       console.error('Failed to load lesson data:', err);
     } finally {
       setLoading(false);
     }
-  }, [courseId, lessonId]);
+  }, [courseId, lessonId, isStudent]);
 
   useEffect(() => {
     loadLessonData();
@@ -70,7 +87,7 @@ export default function LessonViewerPage({ params }: PageProps) {
   const prevLesson = currentIndex > 0 ? sortedLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex >= 0 && currentIndex < sortedLessons.length - 1 ? sortedLessons[currentIndex + 1] : null;
 
-  const isCurrentLessonCompleted = progress?.completedLessonIds?.includes(lessonId) ?? false;
+  const isCurrentLessonCompleted = isStudent && (progress?.completedLessonIds?.includes(lessonId) ?? false);
 
   const handleToggleComplete = async () => {
     if (togglingProgress) return;
@@ -123,6 +140,83 @@ export default function LessonViewerPage({ params }: PageProps) {
 
   const embedVideoUrl = getEmbedUrl(currentLesson?.video_url);
 
+  // Ownership verification for instructors
+  const isInstructor = (role || user?.role_type) === 'instructor';
+  const isAssignedInstructor =
+    isInstructor &&
+    Boolean(
+      (course?.instructor?.id && course.instructor.id === user?.id) ||
+      (course?.instructor?.documentId && course.instructor.documentId === user?.documentId) ||
+      course?.co_instructors?.some(
+        (ci) => (ci.id && ci.id === user?.id) || (ci.documentId && ci.documentId === user?.documentId)
+      )
+    );
+
+  if (course && isInstructor && !isAssignedInstructor) {
+    return (
+      <ProtectedRoute>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            padding: '24px',
+            textAlign: 'center',
+            backgroundColor: 'var(--canvas)',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
+              backgroundColor: 'var(--danger-soft)',
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px',
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>
+            Access Restricted (403 Forbidden)
+          </h2>
+
+          <p style={{ maxWidth: '460px', fontSize: '13.5px', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.5 }}>
+            You are signed in as an Instructor, but you are not assigned to this course curriculum.
+          </p>
+
+          <Link
+            href="/instructor/courses"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--primary)',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '13px',
+              textDecoration: 'none',
+              boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
+            }}
+          >
+            ← Return to Course Studio
+          </Link>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--canvas)' }}>
@@ -162,7 +256,7 @@ export default function LessonViewerPage({ params }: PageProps) {
           {/* Header & Course Progress Summary */}
           <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border-soft)' }}>
             <Link
-              href="/my-courses"
+              href={isStudent ? "/my-courses" : `/courses/${courseId}`}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -174,7 +268,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                 marginBottom: '10px',
               }}
             >
-              ← Back to My Courses
+              {isStudent ? '← Back to My Courses' : '← Back to Manage Course'}
             </Link>
             <h2
               style={{
@@ -188,27 +282,44 @@ export default function LessonViewerPage({ params }: PageProps) {
               {course?.title || 'Course Curriculum'}
             </h2>
 
-            {/* Progress Bar in Sidebar */}
-            <div style={{ marginTop: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '4px' }}>
-                <span>Course Progress</span>
-                <span style={{ color: 'var(--primary)' }}>{progress?.percentage || 0}%</span>
+            {/* Progress Bar in Sidebar (Students only) */}
+            {isStudent ? (
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-soft)', marginBottom: '4px' }}>
+                  <span>Course Progress</span>
+                  <span style={{ color: 'var(--primary)' }}>{progress?.percentage || 0}%</span>
+                </div>
+                <div style={{ height: '6px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${progress?.percentage || 0}%`,
+                      backgroundColor: 'var(--primary)',
+                      borderRadius: '99px',
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--ink-faint)', marginTop: '4px' }}>
+                  {progress?.completedLessons || 0} of {sortedLessons.length} lessons completed
+                </div>
               </div>
-              <div style={{ height: '6px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${progress?.percentage || 0}%`,
-                    backgroundColor: 'var(--primary)',
-                    borderRadius: '99px',
-                    transition: 'width 0.3s ease',
-                  }}
-                />
+            ) : (
+              <div
+                style={{
+                  marginTop: '10px',
+                  padding: '6px 10px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--canvas)',
+                  border: '1px solid var(--border-soft)',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  color: 'var(--ink-soft)',
+                }}
+              >
+                Curriculum Preview • {sortedLessons.length} Lessons
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--ink-faint)', marginTop: '4px' }}>
-                {progress?.completedLessons || 0} of {sortedLessons.length} lessons completed
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Playlist */}
@@ -216,7 +327,7 @@ export default function LessonViewerPage({ params }: PageProps) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {sortedLessons.map((lesson, idx) => {
                 const isActive = lesson.documentId === lessonId;
-                const isCompleted = progress?.completedLessonIds?.includes(lesson.documentId);
+                const isCompleted = isStudent && (progress?.completedLessonIds?.includes(lesson.documentId) ?? false);
 
                 return (
                   <Link
@@ -420,6 +531,82 @@ export default function LessonViewerPage({ params }: PageProps) {
                   ← Return to My Courses
                 </Link>
               </div>
+            ) : isStudent && isEnrolled === false ? (
+              /* Student Not Enrolled Barrier */
+              <div
+                style={{
+                  backgroundColor: 'var(--surface)',
+                  borderRadius: '16px',
+                  border: '1.5px solid var(--primary)',
+                  padding: '40px 24px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '14px',
+                  boxShadow: '0 4px 16px rgba(242, 102, 42, 0.08)',
+                }}
+              >
+                <div
+                  style={{
+                    width: '54px',
+                    height: '54px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(242, 102, 42, 0.1)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+                    Course Enrollment Required
+                  </h2>
+                  <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: '6px 0 0', maxWidth: '480px', lineHeight: 1.5 }}>
+                    You must be enrolled in <strong>{course?.title || 'this course'}</strong> to stream video lessons and track learning progress.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                  <Link
+                    href={`/courses/${courseId}`}
+                    style={{
+                      padding: '10px 22px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--primary)',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: '13.5px',
+                      textDecoration: 'none',
+                      boxShadow: '0 2px 6px rgba(242, 102, 42, 0.3)',
+                    }}
+                  >
+                    Go to Course & Enroll →
+                  </Link>
+                  <Link
+                    href="/courses"
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: '8px',
+                      backgroundColor: 'var(--canvas)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--ink)',
+                      fontWeight: 600,
+                      fontSize: '13.5px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Browse All Courses
+                  </Link>
+                </div>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 {/* Lesson Header & Mark Complete Action */}
@@ -456,29 +643,48 @@ export default function LessonViewerPage({ params }: PageProps) {
                     </h1>
                   </div>
 
-                  {/* Mark Complete / Completed Button */}
-                  <button
-                    onClick={handleToggleComplete}
-                    disabled={togglingProgress}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 20px',
-                      borderRadius: '10px',
-                      backgroundColor: isCurrentLessonCompleted ? 'var(--success-soft)' : 'var(--primary)',
-                      color: isCurrentLessonCompleted ? 'var(--success)' : '#FFFFFF',
-                      border: isCurrentLessonCompleted ? '1.5px solid var(--success)' : 'none',
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      cursor: togglingProgress ? 'not-allowed' : 'pointer',
-                      opacity: togglingProgress ? 0.7 : 1,
-                      boxShadow: isCurrentLessonCompleted ? 'none' : '0 2px 8px rgba(242, 102, 42, 0.3)',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <span>{isCurrentLessonCompleted ? '✓ Completed' : 'Mark as Complete'}</span>
-                  </button>
+                  {/* Mark Complete / Completed Button (Students only) */}
+                  {isStudent ? (
+                    <button
+                      onClick={handleToggleComplete}
+                      disabled={togglingProgress}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 20px',
+                        borderRadius: '10px',
+                        backgroundColor: isCurrentLessonCompleted ? 'var(--success-soft)' : 'var(--primary)',
+                        color: isCurrentLessonCompleted ? 'var(--success)' : '#FFFFFF',
+                        border: isCurrentLessonCompleted ? '1.5px solid var(--success)' : 'none',
+                        fontSize: '13.5px',
+                        fontWeight: 700,
+                        cursor: togglingProgress ? 'not-allowed' : 'pointer',
+                        opacity: togglingProgress ? 0.7 : 1,
+                        boxShadow: isCurrentLessonCompleted ? 'none' : '0 2px 8px rgba(242, 102, 42, 0.3)',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <span>{isCurrentLessonCompleted ? '✓ Completed' : 'Mark as Complete'}</span>
+                    </button>
+                  ) : (
+                    <div
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 14px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--canvas)',
+                        border: '1px solid var(--border)',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: 'var(--ink-soft)',
+                      }}
+                    >
+                      <span>Preview Mode</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Video Player */}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { blogApi } from '@/lib/api';
@@ -20,7 +21,7 @@ export default function BlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<'all' | 'published' | 'draft'>('all');
+  const [filterMode, setFilterMode] = useState<'published' | 'draft'>('published');
 
   // Modal State for Authoring
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -80,7 +81,7 @@ export default function BlogPage() {
       slug: '',
       excerpt: '',
       content: '',
-      cover_image_url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80',
+      cover_image_url: '',
       is_published: false,
     });
     setIsModalOpen(true);
@@ -102,7 +103,7 @@ export default function BlogPage() {
   const handleSavePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.content) {
-      alert('Please provide both a title and article content.');
+      alert('Please provide both a title and blog content.');
       return;
     }
 
@@ -110,10 +111,10 @@ export default function BlogPage() {
     try {
       if (editingPost) {
         await blogApi.update(editingPost.documentId, formData);
-        setToastMessage(`Updated article "${formData.title}"`);
+        setToastMessage(`Updated blog "${formData.title}"`);
       } else {
         await blogApi.create(formData);
-        setToastMessage(`Created article "${formData.title}"`);
+        setToastMessage(`Created blog "${formData.title}"`);
       }
       setIsModalOpen(false);
       setTimeout(() => setToastMessage(null), 3000);
@@ -163,16 +164,17 @@ export default function BlogPage() {
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.excerpt && p.excerpt.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    if (filterMode === 'published') return matchesSearch && p.is_published;
+    if (!canAuthor) return matchesSearch && p.is_published;
     if (filterMode === 'draft') return matchesSearch && !p.is_published;
-    return matchesSearch;
+    return matchesSearch && p.is_published;
   });
 
   const featuredPost = filteredPosts.length > 0 ? filteredPosts[0] : null;
   const remainingPosts = filteredPosts.length > 1 ? filteredPosts.slice(1) : [];
 
   return (
-    <AppShell
+    <ProtectedRoute>
+      <AppShell
       title="Blog"
       subtitle="Engineering essays, in-depth tutorials, and learning resources"
     >
@@ -213,7 +215,7 @@ export default function BlogPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <input
               type="text"
-              placeholder="Search articles & guides..."
+              placeholder="Search blogs & guides..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -231,31 +233,17 @@ export default function BlogPage() {
             {canAuthor && (
               <div style={{ display: 'inline-flex', backgroundColor: 'var(--canvas)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                 <button
-                  onClick={() => setFilterMode('all')}
-                  style={{
-                    padding: '5px 12px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: filterMode === 'all' ? 'var(--surface)' : 'transparent',
-                    color: filterMode === 'all' ? 'var(--ink)' : 'var(--ink-soft)',
-                    fontWeight: 700,
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  All ({posts.length})
-                </button>
-                <button
                   onClick={() => setFilterMode('published')}
                   style={{
-                    padding: '5px 12px',
+                    padding: '5px 14px',
                     borderRadius: '6px',
                     border: 'none',
                     backgroundColor: filterMode === 'published' ? 'var(--surface)' : 'transparent',
                     color: filterMode === 'published' ? 'var(--success)' : 'var(--ink-soft)',
                     fontWeight: 700,
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     cursor: 'pointer',
+                    boxShadow: filterMode === 'published' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
                   Published ({posts.filter((p) => p.is_published).length})
@@ -263,14 +251,15 @@ export default function BlogPage() {
                 <button
                   onClick={() => setFilterMode('draft')}
                   style={{
-                    padding: '5px 12px',
+                    padding: '5px 14px',
                     borderRadius: '6px',
                     border: 'none',
                     backgroundColor: filterMode === 'draft' ? 'var(--surface)' : 'transparent',
                     color: filterMode === 'draft' ? 'var(--warning)' : 'var(--ink-soft)',
                     fontWeight: 700,
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     cursor: 'pointer',
+                    boxShadow: filterMode === 'draft' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                   }}
                 >
                   Drafts ({posts.filter((p) => !p.is_published).length})
@@ -299,7 +288,7 @@ export default function BlogPage() {
               }}
             >
               <span>+</span>
-              <span>Write New Article</span>
+              <span>Write New Blog</span>
             </button>
           )}
         </div>
@@ -320,10 +309,10 @@ export default function BlogPage() {
             }}
           >
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', marginBottom: '8px' }}>
-              No Articles Found
+              No Blogs Found
             </h3>
             <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: 0 }}>
-              {canAuthor ? 'Click "+ Write New Article" to draft your first rich-text engineering post.' : 'Check back soon for new publications.'}
+              {canAuthor ? 'Click "+ Write New Blog" to draft your first rich-text engineering post.' : 'Check back soon for new publications.'}
             </p>
           </div>
         ) : (
@@ -345,7 +334,7 @@ export default function BlogPage() {
                 <div
                   style={{
                     height: '280px',
-                    backgroundImage: `url(${featuredPost.cover_image_url || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80'})`,
+                    backgroundImage: featuredPost.cover_image_url ? `url(${featuredPost.cover_image_url})` : 'linear-gradient(135deg, #0D9488 0%, #0F172A 100%)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     position: 'relative',
@@ -393,9 +382,7 @@ export default function BlogPage() {
                 <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--ink-faint)', marginBottom: '10px' }}>
-                      <span>By {featuredPost.author?.username || 'Editorial Team'}</span>
-                      <span>•</span>
-                      <span>{featuredPost.published_date ? new Date(featuredPost.published_date).toLocaleDateString() : 'Draft'}</span>
+                      <span>{featuredPost.published_date ? new Date(featuredPost.published_date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Draft'}</span>
                     </div>
 
                     <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', lineHeight: 1.3 }}>
@@ -440,7 +427,7 @@ export default function BlogPage() {
                             cursor: 'pointer',
                           }}
                         >
-                          {featuredPost.is_published ? 'Unpublish' : 'Publish'}
+                          {featuredPost.is_published ? 'Move to Draft' : 'Publish'}
                         </button>
 
                         <button
@@ -481,7 +468,7 @@ export default function BlogPage() {
               </div>
             )}
 
-            {/* Remaining Grid of Articles */}
+            {/* Remaining Grid of Blogs */}
             {remainingPosts.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 290px), 1fr))', gap: '20px' }}>
                 {remainingPosts.map((post) => (
@@ -501,7 +488,7 @@ export default function BlogPage() {
                     <div
                       style={{
                         height: '160px',
-                        backgroundImage: `url(${post.cover_image_url || 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop&q=80'})`,
+                        backgroundImage: post.cover_image_url ? `url(${post.cover_image_url})` : 'linear-gradient(135deg, #0D9488 0%, #1E293B 100%)',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         position: 'relative',
@@ -529,7 +516,7 @@ export default function BlogPage() {
                     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between', gap: '16px' }}>
                       <div>
                         <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', marginBottom: '8px' }}>
-                          {post.published_date ? new Date(post.published_date).toLocaleDateString() : 'Draft'} • By {post.author?.username || 'Editorial'}
+                          {post.published_date ? new Date(post.published_date).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'Draft'}
                         </div>
 
                         <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 8px', lineHeight: 1.4 }}>
@@ -553,7 +540,7 @@ export default function BlogPage() {
                             textDecoration: 'none',
                           }}
                         >
-                          Read Article →
+                          Read Blog →
                         </Link>
 
                         {canAuthor && (
@@ -571,7 +558,7 @@ export default function BlogPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              {post.is_published ? 'Unpublish' : 'Publish'}
+                              {post.is_published ? 'Move to Draft' : 'Publish'}
                             </button>
                             <button
                               onClick={() => openEditModal(post)}
@@ -620,8 +607,8 @@ export default function BlogPage() {
             isOpen={publishModalState.isOpen}
             onClose={() => setPublishModalState((prev) => ({ ...prev, isOpen: false }))}
             onConfirm={handleConfirmPublish}
-            title={publishModalState.isPublishing ? 'Publish Article to Platform' : 'Unpublish Article to Drafts'}
-            articleTitle={publishModalState.post.title}
+            title={publishModalState.isPublishing ? 'Publish Blog to Platform' : 'Move Blog to Drafts'}
+            blogTitle={publishModalState.post.title}
             isPublishing={publishModalState.isPublishing}
           />
         )}
@@ -632,13 +619,13 @@ export default function BlogPage() {
             isOpen={deleteModalState.isOpen}
             onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
             onConfirm={handleConfirmDelete}
-            title="Delete Article"
+            title="Delete Blog"
             message={`Are you sure you want to permanently delete "${deleteModalState.post.title}"? This action cannot be undone.`}
-            itemType="article"
+            itemType="blog"
           />
         )}
 
-        {/* Modal: Write / Edit Article with TipTap WYSIWYG Editor */}
+        {/* Modal: Write / Edit Blog with TipTap WYSIWYG Editor */}
         {isModalOpen && (
           <div
             style={{
@@ -669,10 +656,10 @@ export default function BlogPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 2px' }}>
-                    {editingPost ? 'Edit Blog Article' : 'WYSIWYG Rich-Text Article Studio'}
+                    {editingPost ? 'Edit Blog Post' : 'Text Blog Studio'}
                   </h3>
                   <p style={{ fontSize: '12px', color: 'var(--ink-soft)', margin: 0 }}>
-                    Powered by TipTap Rich Text Engine (Bold, Headings, Lists, Quotes & Code Blocks)
+                   
                   </p>
                 </div>
                 <button
@@ -686,14 +673,14 @@ export default function BlogPage() {
               <form onSubmit={handleSavePost} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', marginBottom: '6px' }}>
-                    Article Title *
+                    Blog Title *
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g. Mastering Asynchronous Patterns in JavaScript"
+                    placeholder="e.g. How to be a candidate master"
                     style={{
                       width: '100%',
                       padding: '10px 14px',
@@ -737,7 +724,7 @@ export default function BlogPage() {
                     type="url"
                     value={formData.cover_image_url}
                     onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
+                    placeholder="Enter Cover Image URL..."
                     style={{
                       width: '100%',
                       padding: '10px 14px',
@@ -754,7 +741,7 @@ export default function BlogPage() {
                 {/* TipTap WYSIWYG Rich Text Editor */}
                 <div>
                   <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', marginBottom: '6px' }}>
-                    Article Body (WYSIWYG Rich Text) *
+                    Blog Body *
                   </label>
                   <RichTextEditor
                     content={formData.content}
@@ -807,7 +794,7 @@ export default function BlogPage() {
                       opacity: submitting ? 0.7 : 1,
                     }}
                   >
-                    {submitting ? 'Saving...' : editingPost ? 'Save Changes' : 'Create Article'}
+                    {submitting ? 'Saving...' : editingPost ? 'Save Changes' : 'Create Blog'}
                   </button>
                 </div>
               </form>
@@ -816,5 +803,6 @@ export default function BlogPage() {
         )}
       </div>
     </AppShell>
+    </ProtectedRoute>
   );
 }

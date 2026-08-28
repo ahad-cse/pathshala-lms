@@ -159,6 +159,7 @@ export interface CourseFormData {
   cover_color: string;
   cover_image_url?: string;
   instructor?: string | number;
+  co_instructors?: (string | number)[];
 }
 
 export interface LessonFormData {

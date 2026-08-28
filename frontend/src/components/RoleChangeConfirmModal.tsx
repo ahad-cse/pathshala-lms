@@ -15,7 +15,7 @@ interface RoleChangeConfirmModalProps {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   admin: 'Full platform governance, user directory management, and system-wide privileges.',
-  content_manager: 'Curriculum categorization, blog article authoring, and draft publication controls.',
+  content_manager: 'Curriculum categorization, blog authoring, and draft publication controls.',
   instructor: 'Course creation, chapter/lesson authoring, and MCQ quiz pool evaluations.',
   student: 'Standard learner permissions (course enrollment, lesson tracking, and quiz submissions).',
 };

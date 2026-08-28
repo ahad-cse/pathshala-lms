@@ -18,6 +18,10 @@ interface EnrolledStudentRecord {
   totalLessons: number;
   completedLessons: number;
   progressPercent: number;
+  totalCourseQuizzes: number;
+  quizzesAttempted: number;
+  quizzesPassed: number;
+  avgQuizScore: number;
   quizSubmission?: {
     score: number;
     passed: boolean;
@@ -112,7 +116,11 @@ export default function StudentProgressTable({
 
       const progressPercent = totalLessons > 0 ? Math.min(100, Math.round((studentCompletedCount / totalLessons) * 100)) : 0;
 
-      // Find latest quiz submission for this student and this course
+      // Find all quizzes in this course
+      const courseQuizzes = matchedCourse?.quizzes || course?.quizzes || [];
+      const totalCourseQuizzes = courseQuizzes.length;
+
+      // Find all quiz submissions for this student across quizzes in this course
       const matchedSubmissions = submissions.filter((s: any) => {
         const sStudentId = s.student?.id || (typeof s.student === 'number' ? s.student : null);
         const sCourseDocId = s.quiz?.course?.documentId;
@@ -127,6 +135,13 @@ export default function StudentProgressTable({
       });
 
       const latestSub = matchedSubmissions.length > 0 ? matchedSubmissions[matchedSubmissions.length - 1] : null;
+      
+      // Calculate quizzes passed and average score
+      const quizzesAttempted = matchedSubmissions.length;
+      const quizzesPassed = matchedSubmissions.filter((s) => s.passed).length;
+      const avgQuizScore = quizzesAttempted > 0
+        ? Math.round(matchedSubmissions.reduce((acc, s) => acc + (s.score || 0), 0) / quizzesAttempted)
+        : 0;
 
       return {
         enrollmentId: enr.documentId || String(enr.id),
@@ -142,6 +157,10 @@ export default function StudentProgressTable({
         totalLessons,
         completedLessons: studentCompletedCount,
         progressPercent,
+        totalCourseQuizzes,
+        quizzesAttempted,
+        quizzesPassed,
+        avgQuizScore,
         quizSubmission: latestSub
           ? {
               score: latestSub.score,
@@ -348,9 +367,9 @@ export default function StudentProgressTable({
             <option value="all">All Progress Status</option>
             <option value="completed">100% Completed Course</option>
             <option value="in_progress">In Progress (&gt;0%)</option>
-            <option value="passed">Passed Quiz</option>
-            <option value="failed">Failed Quiz</option>
-            <option value="pending_quiz">Pending Quiz Evaluation</option>
+            <option value="passed">Passed Quizzes</option>
+            <option value="failed">Failed Quizzes</option>
+            <option value="pending_quiz">Pending Quiz Evaluations</option>
           </select>
         </div>
       </div>
@@ -363,7 +382,7 @@ export default function StudentProgressTable({
               <th style={{ padding: '12px 16px' }}>Student</th>
               <th style={{ padding: '12px 16px' }}>Enrolled Course</th>
               <th style={{ padding: '12px 16px' }}>Course Progress</th>
-              <th style={{ padding: '12px 16px' }}>Final Assessment Quiz</th>
+              <th style={{ padding: '12px 16px' }}>Quiz Evaluations</th>
               <th style={{ padding: '12px 16px', textAlign: 'right' }}>Enrolled Date</th>
             </tr>
           </thead>
@@ -484,25 +503,36 @@ export default function StudentProgressTable({
 
                     {/* Quiz Result Column */}
                     <td style={{ padding: '12px 16px' }}>
-                      {rec.quizSubmission ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {rec.totalCourseQuizzes === 0 && rec.quizzesAttempted === 0 ? (
+                        <span style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>—</span>
+                      ) : rec.quizzesAttempted > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span
                             style={{
                               fontSize: '11.5px',
                               fontWeight: 800,
                               padding: '3px 8px',
                               borderRadius: '6px',
-                              backgroundColor: rec.quizSubmission.passed ? 'rgba(22, 163, 74, 0.1)' : 'var(--danger-soft)',
-                              color: rec.quizSubmission.passed ? '#16A34A' : 'var(--danger)',
-                              border: rec.quizSubmission.passed ? '1px solid rgba(22, 163, 74, 0.25)' : '1px solid rgba(220, 38, 38, 0.25)',
+                              backgroundColor: rec.quizzesPassed > 0 ? 'rgba(22, 163, 74, 0.1)' : 'var(--danger-soft)',
+                              color: rec.quizzesPassed > 0 ? '#16A34A' : 'var(--danger)',
+                              border: rec.quizzesPassed > 0 ? '1px solid rgba(22, 163, 74, 0.25)' : '1px solid rgba(220, 38, 38, 0.25)',
+                              display: 'inline-block',
+                              width: 'fit-content',
                             }}
                           >
-                            {rec.quizSubmission.passed ? 'Passed' : 'Failed'} ({rec.quizSubmission.score}%)
+                            {rec.totalCourseQuizzes > 1
+                              ? `${rec.quizzesPassed}/${rec.totalCourseQuizzes} Passed (${rec.avgQuizScore}%)`
+                              : `${rec.quizzesPassed > 0 ? 'Passed' : 'Failed'} (${rec.avgQuizScore}%)`}
                           </span>
+                          {rec.totalCourseQuizzes > 1 && (
+                            <span style={{ fontSize: '10.5px', color: 'var(--ink-faint)' }}>
+                              {rec.quizzesAttempted} of {rec.totalCourseQuizzes} quizzes attempted
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <span style={{ fontSize: '12px', color: 'var(--ink-faint)', fontStyle: 'italic' }}>
-                          Pending Submission
+                          Pending ({rec.totalCourseQuizzes} {rec.totalCourseQuizzes === 1 ? 'Quiz' : 'Quizzes'})
                         </span>
                       )}
                     </td>

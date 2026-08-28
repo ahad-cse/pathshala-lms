@@ -66,7 +66,35 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   // Check role authorization if allowedRoles is specified
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     const currentRoleConf = ROLE_DETAILS[role] || ROLE_DETAILS.student;
-    
+    const getHomePath = (r?: RoleType) => {
+      switch (r) {
+        case 'admin':
+          return '/dashboard';
+        case 'content_manager':
+          return '/courses';
+        case 'instructor':
+          return '/instructor/courses';
+        case 'student':
+          return '/my-courses';
+        default:
+          return '/';
+      }
+    };
+
+    const getHomeLabel = (r?: RoleType) => {
+      switch (r) {
+        case 'admin':
+          return 'Return to Dashboard';
+        case 'content_manager':
+          return 'Return to Courses';
+        case 'instructor':
+          return 'Return to Course Studio';
+        case 'student':
+          return 'Return to My Courses';
+        default:
+          return 'Return Home';
+      }
+    };
     return (
       <div
         style={{
@@ -109,7 +137,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
         </p>
 
         <Link
-          href="/dashboard"
+          href={getHomePath(role)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -124,7 +152,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
             boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
           }}
         >
-          Return to Your Dashboard
+          {getHomeLabel(role)}
         </Link>
       </div>
     );

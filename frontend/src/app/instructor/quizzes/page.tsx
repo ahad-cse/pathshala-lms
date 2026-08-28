@@ -3,10 +3,10 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function RedirectToQuizzes() {
+export default function RedirectToInstructorCourses() {
   const router = useRouter();
   useEffect(() => {
-    router.replace('/quizzes');
+    router.replace('/instructor/courses');
   }, [router]);
 
   return null;

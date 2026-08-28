@@ -360,17 +360,17 @@ export default function DashboardPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'var(--canvas)', borderBottom: '1px solid var(--border-soft)' }}>
-                    <th style={{ padding: '12px 24px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>
-                      USER IDENTITY
+                    <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)' }}>
+                      User Identity
                     </th>
-                    <th style={{ padding: '12px 18px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>
-                      CURRENT ROLE
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)' }}>
+                      Current Role
                     </th>
-                    <th style={{ padding: '12px 18px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>
-                      CHANGE ROLE
+                    <th style={{ padding: '12px 18px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)' }}>
+                      Change Role
                     </th>
-                    <th style={{ padding: '12px 24px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)', textAlign: 'right' }}>
-                      ACTIONS
+                    <th style={{ padding: '12px 24px', fontSize: '12px', fontWeight: 600, color: 'var(--ink-soft)', textAlign: 'right' }}>
+                      Actions
                     </th>
                   </tr>
                 </thead>

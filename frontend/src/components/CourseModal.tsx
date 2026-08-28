@@ -38,8 +38,7 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [coverColor, setCoverColor] = useState(COLOR_PRESETS[0].value);
   const [coverImageUrl, setCoverImageUrl] = useState('');
-  const [instructorId, setInstructorId] = useState<string>('');
-  const [selectedCoInstructorIds, setSelectedCoInstructorIds] = useState<string[]>([]);
+  const [selectedInstructorIds, setSelectedInstructorIds] = useState<string[]>([]);
   const [instructorsList, setInstructorsList] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -47,12 +46,12 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
   const isEditing = Boolean(courseToEdit);
   const isAdminOrCM = role === 'admin' || role === 'content_manager';
 
-  // Load instructor list for admin / content manager
+  // Load instructor list for admin / content manager (only users with instructor role)
   useEffect(() => {
     if (isAdminOrCM && isOpen) {
       userApi.getAll()
         .then((users) => {
-          const qualified = users.filter((u) => u.role_type === 'instructor' || u.role_type === 'admin' || u.role_type === 'content_manager');
+          const qualified = users.filter((u) => u.role_type === 'instructor');
           setInstructorsList(qualified);
         })
         .catch((err) => console.warn('Could not fetch instructors list:', err));
@@ -62,17 +61,40 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
   // Sync form state with courseToEdit or defaults
   useEffect(() => {
     if (courseToEdit) {
-      setTitle(courseToEdit.title);
-      setDescription(courseToEdit.description);
+      setTitle(courseToEdit.title || '');
+      setDescription(courseToEdit.description || '');
       setCategory(courseToEdit.category || CATEGORIES[0]);
       setCoverColor(courseToEdit.cover_color || COLOR_PRESETS[0].value);
-      setInstructorId(courseToEdit.instructor?.documentId || '');
+      setCoverImageUrl(courseToEdit.cover_image_url || '');
+
+      const allAssignedIds: string[] = [];
+      if (courseToEdit.instructor) {
+        const leadId = courseToEdit.instructor.documentId || (courseToEdit.instructor.id ? String(courseToEdit.instructor.id) : '');
+        if (leadId) allAssignedIds.push(leadId);
+      }
+      if (courseToEdit.co_instructors && Array.isArray(courseToEdit.co_instructors)) {
+        courseToEdit.co_instructors.forEach((ci: any) => {
+          const cId = ci.documentId || (ci.id ? String(ci.id) : '');
+          if (cId && !allAssignedIds.includes(cId)) {
+            allAssignedIds.push(cId);
+          }
+        });
+      }
+      setSelectedInstructorIds(allAssignedIds);
     } else {
       setTitle('');
       setDescription('');
       setCategory(CATEGORIES[0]);
       setCoverColor(COLOR_PRESETS[0].value);
-      setInstructorId(user?.documentId || '');
+      setCoverImageUrl('');
+      // Only pre-select if logged in user is actually an instructor
+      if (user?.role_type === 'instructor') {
+        const defaultId = user.documentId || (user.id ? String(user.id) : '');
+        setSelectedInstructorIds(defaultId ? [defaultId] : []);
+      } else {
+        // Admins and Content Managers start with empty selection
+        setSelectedInstructorIds([]);
+      }
     }
     setErrorMsg(null);
   }, [courseToEdit, isOpen, user]);
@@ -94,10 +116,12 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
       description: description.trim(),
       category,
       cover_color: coverColor,
+      cover_image_url: coverImageUrl.trim() || undefined,
     };
 
-    if (isAdminOrCM && instructorId) {
-      payload.instructor = instructorId;
+    if (isAdminOrCM && selectedInstructorIds.length > 0) {
+      payload.instructor = selectedInstructorIds[0];
+      payload.co_instructors = selectedInstructorIds.slice(1);
     }
 
     try {
@@ -199,7 +223,7 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Modern Fullstack React & Node.js"
+              placeholder="Enter Course Title..."
               required
               style={{
                 width: '100%',
@@ -276,46 +300,21 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
             </div>
           </div>
 
-          {/* Lead Instructor Selection */}
-          {isAdminOrCM && (
+          {/* Assigned Course Instructors Multi-Selection */}
+          {isAdminOrCM && instructorsList.length > 0 && (
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ink)', marginBottom: '5px' }}>
-                Lead Course Instructor (Primary)
-              </label>
-              <select
-                value={instructorId}
-                onChange={(e) => setInstructorId(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--surface)',
-                  fontSize: '13px',
-                  color: 'var(--ink)',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <option value="">-- Assign Lead Instructor --</option>
-                {instructorsList.map((inst) => (
-                  <option key={inst.documentId || inst.id} value={inst.documentId || inst.id}>
-                    {inst.username} ({inst.email}) [{inst.role_type}]
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink)' }}>
+                  Assigned Course Instructors
+                </label>
+                <span style={{ fontSize: '11px', color: 'var(--ink-faint)' }}>
+                  {selectedInstructorIds.length} assigned
+                </span>
+              </div>
 
-          {/* Co-Instructors / Teaching Faculty Multi-Selection */}
-          {instructorsList.length > 0 && (
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ink)', marginBottom: '5px' }}>
-                Co-Instructors & Teaching Faculty (Optional)
-              </label>
               <div
                 style={{
-                  maxHeight: '120px',
+                  maxHeight: '140px',
                   overflowY: 'auto',
                   border: '1px solid var(--border)',
                   borderRadius: '8px',
@@ -326,45 +325,51 @@ export default function CourseModal({ isOpen, onClose, onSuccess, courseToEdit }
                   gap: '6px',
                 }}
               >
-                {instructorsList
-                  .filter((inst) => (inst.documentId || String(inst.id)) !== instructorId)
-                  .map((inst) => {
-                    const instDocId = inst.documentId || String(inst.id);
-                    const isChecked = selectedCoInstructorIds.includes(instDocId);
+                {instructorsList.map((inst) => {
+                  const instDocId = inst.documentId || String(inst.id);
+                  const instNumericId = String(inst.id);
+                  const isChecked = selectedInstructorIds.some(
+                    (id) => id === instDocId || (instNumericId && id === instNumericId)
+                  );
 
-                    return (
-                      <label
-                        key={instDocId}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          fontSize: '12.5px',
-                          color: 'var(--ink)',
-                          cursor: 'pointer',
-                          padding: '4px 6px',
-                          borderRadius: '6px',
-                          backgroundColor: isChecked ? 'var(--role-instructor-soft)' : 'transparent',
+                  return (
+                    <label
+                      key={instDocId}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '12.5px',
+                        color: 'var(--ink)',
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: isChecked ? 'var(--role-instructor-soft)' : 'transparent',
+                        transition: 'background-color 0.12s ease',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedInstructorIds([...selectedInstructorIds, instDocId]);
+                          } else {
+                            setSelectedInstructorIds(
+                              selectedInstructorIds.filter(
+                                (id) => id !== instDocId && id !== instNumericId
+                              )
+                            );
+                          }
                         }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedCoInstructorIds([...selectedCoInstructorIds, instDocId]);
-                            } else {
-                              setSelectedCoInstructorIds(selectedCoInstructorIds.filter((id) => id !== instDocId));
-                            }
-                          }}
-                          style={{ accentColor: 'var(--role-instructor)', cursor: 'pointer' }}
-                        />
-                        <span style={{ fontWeight: isChecked ? 700 : 400 }}>
-                          {inst.full_name || inst.username} ({inst.email})
-                        </span>
-                      </label>
-                    );
-                  })}
+                        style={{ accentColor: 'var(--role-instructor)', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontWeight: isChecked ? 700 : 400 }}>
+                        {inst.full_name || inst.username} ({inst.email})
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}

@@ -7,7 +7,7 @@ interface PublishConfirmModalProps {
   onClose: () => void;
   onConfirm: () => Promise<void>;
   title: string;
-  articleTitle: string;
+  blogTitle: string;
   isPublishing: boolean; // true = publish, false = unpublish (draft)
 }
 
@@ -16,7 +16,7 @@ export default function PublishConfirmModal({
   onClose,
   onConfirm,
   title,
-  articleTitle,
+  blogTitle,
   isPublishing,
 }: PublishConfirmModalProps) {
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ export default function PublishConfirmModal({
       await onConfirm();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err?.message || `Failed to ${isPublishing ? 'publish' : 'unpublish'} article.`);
+      setErrorMsg(err?.message || `Failed to update blog status.`);
     } finally {
       setLoading(false);
     }
@@ -138,15 +138,15 @@ export default function PublishConfirmModal({
         >
           <span style={{ fontSize: '15px' }}></span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {articleTitle}
+            {blogTitle}
           </span>
         </div>
 
         {/* Explanatory Message */}
         <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: '0 0 24px', lineHeight: 1.55 }}>
           {isPublishing
-            ? 'Publishing this article will make it instantly accessible to all students, readers, and public visitors across the platform.'
-            : 'Unpublishing this article will move it into Draft Mode. It will no longer be visible to students or the public until republished.'}
+            ? 'Publishing this blog will make it instantly accessible to all students, readers, and public visitors across the platform.'
+            : 'Moving this blog to Draft Mode will remove it from the public view until published again.'}
         </p>
 
         {/* Error Alert */}

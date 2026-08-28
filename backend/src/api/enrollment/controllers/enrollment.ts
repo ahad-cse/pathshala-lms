@@ -122,7 +122,7 @@ export default factories.createCoreController('api::enrollment.enrollment', ({ s
       return ctx.unauthorized('You must be logged in to enroll in a course.');
     }
 
-    if (user.role_type !== 'student' && user.role_type !== 'admin') {
+    if (user.role_type !== 'student') {
       return ctx.forbidden('Only students can enroll in courses.');
     }
 

@@ -192,7 +192,7 @@ export default function CoursesPage() {
   const categories = ['All', ...Array.from(new Set(courses.map((c) => c.category).filter(Boolean)))];
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['admin', 'content_manager', 'student']}>
       <AppShell
         title="Courses"
         subtitle={

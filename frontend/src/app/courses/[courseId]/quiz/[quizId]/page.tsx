@@ -191,6 +191,83 @@ export default function CourseQuizPage({ params }: PageProps) {
   const questions = quiz?.questions || [];
   const answeredCount = Object.keys(selectedAnswers).length;
 
+  // Ownership verification for instructors
+  const isInstructor = (role || user?.role_type) === 'instructor';
+  const isAssignedInstructor =
+    isInstructor &&
+    Boolean(
+      (course?.instructor?.id && course.instructor.id === user?.id) ||
+      (course?.instructor?.documentId && course.instructor.documentId === user?.documentId) ||
+      course?.co_instructors?.some(
+        (ci) => (ci.id && ci.id === user?.id) || (ci.documentId && ci.documentId === user?.documentId)
+      )
+    );
+
+  if (course && isInstructor && !isAssignedInstructor) {
+    return (
+      <ProtectedRoute>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            padding: '24px',
+            textAlign: 'center',
+            backgroundColor: 'var(--canvas)',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
+              backgroundColor: 'var(--danger-soft)',
+              color: 'var(--danger)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px',
+            }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', marginBottom: '8px' }}>
+            Access Restricted (403 Forbidden)
+          </h2>
+
+          <p style={{ maxWidth: '460px', fontSize: '13.5px', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.5 }}>
+            You are signed in as an Instructor, but you are not assigned to this course quiz assessment.
+          </p>
+
+          <Link
+            href="/instructor/courses"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--primary)',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '13px',
+              textDecoration: 'none',
+              boxShadow: '0 2px 6px rgba(242, 102, 42, 0.25)',
+            }}
+          >
+            ← Return to Course Studio
+          </Link>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--canvas)' }}>
@@ -230,7 +307,7 @@ export default function CourseQuizPage({ params }: PageProps) {
           {/* Header & Course Progress Summary */}
           <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border-soft)' }}>
             <Link
-              href={`/courses/${courseId}`}
+              href={isStudent ? (isEnrolled ? '/my-courses' : `/courses/${courseId}`) : `/courses/${courseId}`}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -242,7 +319,7 @@ export default function CourseQuizPage({ params }: PageProps) {
                 marginBottom: '10px',
               }}
             >
-              ← Back to Course Page
+              {isStudent ? '← Back to My Courses' : '← Back to Manage Course'}
             </Link>
 
             <h2

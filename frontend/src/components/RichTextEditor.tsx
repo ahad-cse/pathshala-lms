@@ -27,7 +27,7 @@ export default function RichTextEditor({ content, onChange, placeholder }: RichT
         },
       }),
       Placeholder.configure({
-        placeholder: placeholder || 'Start writing your engineering article here...',
+        placeholder: placeholder || 'Start writing your blog here...',
         emptyEditorClass: 'is-editor-empty',
       }),
     ],

@@ -203,13 +203,20 @@ export default function StudentProgressTable({
     });
   }, [records, selectedCourseFilter, selectedStatusFilter, searchQuery]);
 
-  // Platform Metrics
-  const totalStudentsEnrolled = records.length;
+  // Course / Filtered Scope Metrics
+  const scopedRecords = useMemo(() => {
+    if (selectedCourseFilter !== 'all') {
+      return records.filter((r) => r.courseId === selectedCourseFilter);
+    }
+    return records;
+  }, [records, selectedCourseFilter]);
+
+  const totalStudentsEnrolled = scopedRecords.length;
   const avgProgress = totalStudentsEnrolled > 0
-    ? Math.round(records.reduce((acc, r) => acc + r.progressPercent, 0) / totalStudentsEnrolled)
+    ? Math.round(scopedRecords.reduce((acc, r) => acc + r.progressPercent, 0) / totalStudentsEnrolled)
     : 0;
-  const evaluatedCount = records.filter((r) => r.quizSubmission !== undefined).length;
-  const passedCount = records.filter((r) => r.quizSubmission?.passed).length;
+  const evaluatedCount = scopedRecords.filter((r) => r.quizzesAttempted > 0).length;
+  const passedCount = scopedRecords.filter((r) => r.quizzesPassed > 0).length;
   const passRate = evaluatedCount > 0 ? Math.round((passedCount / evaluatedCount) * 100) : 0;
 
   return (

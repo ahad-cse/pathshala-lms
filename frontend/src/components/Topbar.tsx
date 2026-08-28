@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth, ROLE_DETAILS } from '@/context/AuthContext';
+import { useAuth, ROLE_DETAILS, DEMO_CREDENTIALS } from '@/context/AuthContext';
 import { RoleType } from '@/types/auth';
 import Logo from '@/components/Logo';
 import Link from 'next/link';
@@ -101,7 +101,8 @@ export default function Topbar() {
   };
 
   const handleQuickSwitch = async (targetRole: RoleType) => {
-    if (targetRole === currentRole) {
+    const targetEmail = DEMO_CREDENTIALS[targetRole]?.identifier;
+    if (user?.email === targetEmail) {
       setShowRoleMenu(false);
       return;
     }

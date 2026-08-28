@@ -417,7 +417,7 @@ export default function LessonViewerPage({ params }: PageProps) {
             {quizzes.length > 0 && (
               <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-soft)' }}>
                 <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px', paddingLeft: '8px' }}>
-                  Course Assessment
+                  Course Quizzes & Assessments
                 </div>
                 {quizzes.map((q) => {
                   const sub = quizSubmissionsMap[q.documentId] || (q.id ? quizSubmissionsMap[String(q.id)] : undefined);

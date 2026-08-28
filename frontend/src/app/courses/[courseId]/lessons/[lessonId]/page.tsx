@@ -1,5 +1,7 @@
 'use client';
 
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 import confetti from 'canvas-confetti';
 
 import React, { useEffect, useState, useCallback, use } from 'react';
@@ -521,9 +523,7 @@ export default function LessonViewerPage({ params }: PageProps) {
           {/* Lesson Main View Area */}
           <main className="lesson-main" style={{ flex: 1, padding: '32px', maxWidth: '960px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
             {loading ? (
-              <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)' }}>
-                Loading lesson content...
-              </div>
+              <LoadingSpinner message="Loading video lesson..." minHeight="400px" />
             ) : !currentLesson ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
                 <h3>Lesson Not Found</h3>
@@ -829,7 +829,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                         textDecoration: 'none',
                       }}
                     >
-                      <span>✓ Track Finished • Return to My Courses</span>
+                      <span>Track Finished • Return to My Courses</span>
                     </Link>
                   )}
                 </div>

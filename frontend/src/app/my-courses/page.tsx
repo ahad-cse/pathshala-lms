@@ -1,5 +1,7 @@
 'use client';
 
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 import React, { useEffect, useState, useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
@@ -118,9 +120,7 @@ export default function MyCoursesPage() {
 
           {/* Enrolled Courses Grid */}
           {loading ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
-              Loading your courses and progress records...
-            </div>
+            <LoadingSpinner message="Loading your enrolled courses & progress..." minHeight="300px" />
           ) : enrollments.length === 0 ? (
             <div
               style={{

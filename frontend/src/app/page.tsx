@@ -1,6 +1,5 @@
 'use client';
 
-
 import Logo from '@/components/Logo';
 
 import React, { useEffect, useState } from 'react';

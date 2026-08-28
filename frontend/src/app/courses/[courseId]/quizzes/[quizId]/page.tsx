@@ -1,5 +1,7 @@
 'use client';
 
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 import React, { useEffect, useState, useCallback, use } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -599,9 +601,7 @@ export default function CourseQuizPage({ params }: PageProps) {
             )}
 
             {loading ? (
-              <div style={{ padding: '80px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
-                Loading assessment questions...
-              </div>
+              <LoadingSpinner message="Loading assessment questions..." minHeight="360px" />
             ) : !quiz ? (
               <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: '14px', border: '1px solid var(--border)' }}>
                 <h3 style={{ margin: '0 0 10px' }}>Quiz Not Found</h3>

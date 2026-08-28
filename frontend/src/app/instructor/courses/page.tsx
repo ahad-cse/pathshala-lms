@@ -1,5 +1,7 @@
 'use client';
 
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
@@ -218,9 +220,7 @@ export default function InstructorCoursesPage() {
 
           {/* Courses Card Grid */}
           {loading ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '14px' }}>
-              Loading your assigned courses...
-            </div>
+            <LoadingSpinner message="Loading your assigned courses..." minHeight="300px" />
           ) : filteredCourses.length === 0 ? (
             <div
               style={{

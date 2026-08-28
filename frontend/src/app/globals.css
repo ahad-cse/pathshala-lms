@@ -104,6 +104,38 @@ button {
    Responsive Breakpoints & Utility Classes
    ========================================================================== */
 
+/* Topbar Mobile Navigation */
+@media (max-width: 768px) {
+  .topbar-desktop-nav {
+    display: none !important;
+  }
+
+  .topbar-mobile-toggle {
+    display: flex !important;
+  }
+
+  .topbar-user-name {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .topbar-mobile-toggle {
+    display: none !important;
+  }
+
+  .topbar-mobile-menu {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-role-text {
+    display: none !important;
+  }
+}
+
+
 @media (max-width: 1024px) {
   .app-sidebar {
     position: fixed !important;

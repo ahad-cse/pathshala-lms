@@ -12,6 +12,7 @@ export default function Topbar() {
   const { user, role, switchDemoRole, logout } = useAuth();
   const [isSwitching, setIsSwitching] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const pathname = usePathname();
 
@@ -108,21 +109,55 @@ export default function Topbar() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 28px',
+          padding: '0 24px',
           position: 'sticky',
           top: 0,
           zIndex: 40,
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
         }}
       >
-        {/* Left: Brand Logo */}
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Logo size={32} badgeText="LMS" href={getHomeHref(currentRole)} />
+        {/* Left: Brand Logo & Mobile Menu Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {navLinks.length > 0 && (
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="topbar-mobile-toggle"
+              aria-label="Toggle navigation menu"
+              style={{
+                padding: '7px',
+                borderRadius: '8px',
+                backgroundColor: isMobileMenuOpen ? 'var(--primary)' : 'var(--canvas)',
+                border: '1px solid var(--border)',
+                color: isMobileMenuOpen ? '#FFFFFF' : 'var(--ink)',
+                cursor: 'pointer',
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {isMobileMenuOpen ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              )}
+            </button>
+          )}
+
+          <Logo size={30} badgeText="LMS" href={getHomeHref(currentRole)} />
         </div>
 
-        {/* Center: Centered Dynamic Nav Links */}
+        {/* Center: Desktop Centered Dynamic Nav Links */}
         {navLinks.length > 0 && (
           <nav
+            className="topbar-desktop-nav"
             style={{
               position: 'absolute',
               left: '50%',
@@ -175,7 +210,7 @@ export default function Topbar() {
         )}
 
         {/* Right Action Area: Demo Role Switcher, User Profile & Logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Quick Demo Switcher Dropdown */}
           <div style={{ position: 'relative' }}>
             <button
@@ -184,8 +219,8 @@ export default function Topbar() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '6px 12px',
+                gap: '6px',
+                padding: '6px 10px',
                 borderRadius: '8px',
                 backgroundColor: 'var(--canvas)',
                 border: '1px solid var(--border)',
@@ -205,7 +240,7 @@ export default function Topbar() {
                   backgroundColor: roleConfig.color,
                 }}
               />
-              <span>
+              <span className="topbar-role-text">
                 Role: <strong>{roleConfig.label}</strong>
               </span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -220,7 +255,7 @@ export default function Topbar() {
                   position: 'absolute',
                   right: 0,
                   top: 'calc(100% + 6px)',
-                  width: '230px',
+                  width: '220px',
                   backgroundColor: 'var(--surface)',
                   border: '1px solid var(--border)',
                   borderRadius: '10px',
@@ -298,7 +333,7 @@ export default function Topbar() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '4px 10px 4px 6px',
+                padding: '4px 8px 4px 6px',
                 backgroundColor: 'var(--canvas)',
                 borderRadius: '99px',
                 border: '1px solid var(--border-soft)',
@@ -329,13 +364,13 @@ export default function Topbar() {
                 </div>
               )}
 
-              <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', paddingRight: '4px' }}>
+              <span className="topbar-user-name" style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', paddingRight: '4px' }}>
                 {user.full_name || user.username}
               </span>
             </div>
           )}
 
-          {/* Logout Button (Opens Confirmation Modal) */}
+          {/* Logout Button */}
           <button
             onClick={() => setIsLogoutModalOpen(true)}
             style={{
@@ -368,6 +403,52 @@ export default function Topbar() {
           </button>
         </div>
       </header>
+
+      {/* Mobile Slide-Down Menu */}
+      {isMobileMenuOpen && navLinks.length > 0 && (
+        <div
+          className="topbar-mobile-menu"
+          style={{
+            backgroundColor: 'var(--surface)',
+            borderBottom: '1px solid var(--border)',
+            padding: '12px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            position: 'sticky',
+            top: '64px',
+            zIndex: 39,
+            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.06)',
+          }}
+        >
+          {navLinks.map((item) => {
+            const isActive = isNavLinkActive(item.href, pathname);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13.5px',
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? 'var(--primary)' : 'var(--ink)',
+                  backgroundColor: isActive ? 'rgba(242, 102, 42, 0.08)' : 'transparent',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>{item.label}</span>
+                {isActive && <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       {/* Logout Confirmation Modal */}
       <LogoutConfirmModal

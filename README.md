@@ -22,41 +22,33 @@
 ## System Architecture & Data Flow
 
 ```mermaid
-flowchart TD
+flowchart LR
     %% Client Tier
-    subgraph Client ["🖥️ 1. CLIENT TIER (Next.js 15 App Router / Vercel)"]
+    subgraph Client ["Frontend (Next.js 15)"]
         direction TB
-        Roles["👥 4-Role System (Admin • Content Manager • Instructor • Student)"]
-        AuthCtx["🔐 AuthContext (JWT Authentication + 1-Click Demo Switcher)"]
-        UI["🎨 Feature Modules (Video Player • Auto-Graded Quiz • TipTap Blog • Admin Panel)"]
-        Roles --> AuthCtx --> UI
+        Auth["AuthContext • 1-Click Demo Login • JWT"]
+        UI["4 Roles • Video Player • Auto Quiz • TipTap Blog • Admin Panel"]
+        Auth --> UI
     end
 
-    %% Transport Client -> Server
-    Client -->|"🌐 REST API (HTTPS + Bearer JWT Header)"| API
+    %% Transport 1
+    Client -->|"REST API (JWT Bearer)"| API
 
     %% Backend Tier
-    subgraph API ["⚙️ 2. BACKEND API CORE (Strapi v5 / Railway)"]
+    subgraph API ["Backend (Strapi v5)"]
         direction TB
-        RBAC["🛡️ RBAC Policy Guards & Scoped Authorization"]
-        M1["📚 Course & Lesson Streaming (/api/courses, /api/lessons)"]
-        M2["📈 Live Progress Engine: (completed / total) * 100 (/api/progress/toggle)"]
-        M3["📝 Anti-Cheat MCQ Auto-Grader (/api/quizzes/:id/submit)"]
-        M4["📰 Blog Studio with Draft SQL Isolation (/api/blog-posts)"]
-        RBAC --> M1 & M2 & M3 & M4
+        RBAC["RBAC Policy Guards"]
+        Services["Courses • Progress Engine • Quiz Grader • Blog Studio"]
+        RBAC --> Services
     end
 
-    %% Transport Server -> DB
-    API -->|"⚡ Knex / Database Connection Pool"| DB
+    %% Transport 2
+    API -->|"Knex Query Pool"| DB
 
     %% Database Tier
-    subgraph DB ["🗄️ 3. PERSISTENCE LAYER (PostgreSQL on Railway / SQLite Local)"]
-        direction LR
-        D1[("up_users<br/>Roles & Bcrypt")]
-        D2[("courses & lessons<br/>1:N Curriculum")]
-        D3[("enrollments & progress<br/>Live % Tracking")]
-        D4[("quizzes & attempts<br/>Score Breakdown")]
-        D5[("blog_posts<br/>Draft vs Published")]
+    subgraph DB ["Database (PostgreSQL / SQLite)"]
+        direction TB
+        Tables[("Users • Roles<br/>Courses • Lessons<br/>Enrollments • Progress<br/>Quizzes • Blog Posts")]
     end
 ```
 
@@ -66,30 +58,27 @@ flowchart TD
 
 ```
 pathshala-lms/
-├── backend/                  # Strapi v5 Headless CMS & TypeScript Backend
-│   ├── config/               # Database, server, plugins, CORS & security configurations
+├── backend/                         # Strapi v5 Headless CMS (TypeScript)
+│   ├── config/                      # Server, database, plugins & CORS configs
 │   ├── src/
-│   │   ├── api/
-│   │   │   ├── admin-dashboard/ # Admin platform statistics & role management controllers
-│   │   │   ├── blog-post/       # Blog schema & draft-isolated controllers
-│   │   │   ├── course/          # Course schemas & instructor relations
-│   │   │   ├── enrollment/      # Student enrollment & progress tracking
-│   │   │   ├── lesson/          # Lesson content & video lecture streaming
-│   │   │   └── quiz/            # MCQ Quiz schema & server auto-grading engine
-│   │   └── index.ts          # Automated bootstrap & demo data seeder
-│   └── package.json
-├── frontend/                 # Next.js 15 App Router Frontend
+│   │   ├── api/                     # Domain modules: course, lesson, progress, quiz, blog-post, admin-dashboard
+│   │   ├── extensions/              # OpenAPI 3.0 / Swagger documentation plugin extension
+│   │   ├── policies/                # RBAC route guard policies (is-admin, is-instructor, etc.)
+│   │   └── index.ts                 # Database bootstrap & automatic demo data seeder
+│   ├── package.json
+│   └── tsconfig.json
+├── frontend/                        # Next.js 15 App Router Frontend
+│   ├── public/                      # Static assets (logo.svg, logo-icon.svg)
 │   ├── src/
-│   │   ├── app/              # Routes: /, /courses, /my-courses, /admin, /blog, /login
-│   │   ├── components/       # AppShell, Sidebar, RichTextEditor, VideoPlayer
-│   │   ├── context/          # AuthContext with 4-role state management
-│   │   ├── lib/              # Type-safe API client (apiFetch)
-│   │   └── types/            # Strict TypeScript interfaces
-│   └── package.json
-├── docs/                     # Architectural documentation & deployment guide
-├── AGENTS.md                 # Development rules & design principles
-├── PROJECT_PLAN.md           # Step-by-step phased implementation roadmap
-└── README.md                 # Main project documentation
+│   │   ├── app/                     # App Router pages: /, /courses, /my-courses, /admin, /blog, /login, /quizzes
+│   │   ├── components/              # UI Components: Topbar, AppShell, VideoPlayer, QuizModal, TipTap Editor, Modals
+│   │   ├── context/                 # AuthContext (4-Role state & 1-Click demo switcher)
+│   │   ├── lib/                     # Type-safe API client (apiFetch)
+│   │   └── types/                   # TypeScript interfaces (auth, content, courses, progress)
+│   ├── package.json
+│   └── tsconfig.json
+├── .gitignore                       # Git ignore rules for env secrets, builds, and logs
+└── README.md                        # Master project documentation
 ```
 
 ---

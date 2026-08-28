@@ -17,13 +17,13 @@ export default factories.createCoreController('api::progress.progress', ({ strap
       ...ctx.query,
       populate: {
         lesson: {
-          fields: ['id', 'title', 'order'],
+          fields: ['id', 'documentId', 'title', 'order'],
         },
         course: {
-          fields: ['id', 'title'],
+          fields: ['id', 'documentId', 'title'],
         },
         student: {
-          fields: ['id', 'username', 'email'],
+          fields: ['id', 'documentId', 'username', 'email'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
@@ -72,37 +72,33 @@ export default factories.createCoreController('api::progress.progress', ({ strap
     }
 
     // Resolve Lesson by documentId or numeric id
-    const targetLesson = typeof lessonId === 'string'
-      ? await strapi.documents('api::lesson.lesson').findOne({ documentId: lessonId })
-      : await strapi.db.query('api::lesson.lesson').findOne({ where: { id: lessonId } });
+    const targetLesson = await strapi.db.query('api::lesson.lesson').findOne({
+      where: {
+        $or: [
+          ...(typeof lessonId === 'string' ? [{ documentId: lessonId }] : []),
+          ...(!isNaN(Number(lessonId)) ? [{ id: Number(lessonId) }] : []),
+        ],
+      },
+    });
 
     if (!targetLesson) {
       return ctx.notFound('Lesson not found.');
     }
 
     // Resolve Course by documentId or numeric id
-    const targetCourse = typeof courseId === 'string'
-      ? await strapi.documents('api::course.course').findOne({
-          documentId: courseId,
-          populate: ['lessons'],
-        })
-      : await strapi.db.query('api::course.course').findOne({
-          where: { id: courseId },
-          populate: ['lessons'],
-        });
+    const targetCourse = await strapi.db.query('api::course.course').findOne({
+      where: {
+        $or: [
+          ...(typeof courseId === 'string' ? [{ documentId: courseId }] : []),
+          ...(!isNaN(Number(courseId)) ? [{ id: Number(courseId) }] : []),
+        ],
+      },
+      populate: ['lessons'],
+    });
 
     if (!targetCourse) {
       return ctx.notFound('Course not found.');
     }
-
-    const userEntry = await strapi.db.query('plugin::users-permissions.user').findOne({
-      where: { id: user.id },
-      select: ['id', 'documentId'],
-    });
-
-    const userDocId = userEntry?.documentId || user.documentId;
-    const lessonDocId = targetLesson.documentId;
-    const courseDocId = targetCourse.documentId;
 
     // Check if progress record already exists for this student & lesson
     const existingProgress = await strapi.db.query('api::progress.progress').findOne({
@@ -116,17 +112,17 @@ export default factories.createCoreController('api::progress.progress', ({ strap
 
     if (existingProgress) {
       // Toggle OFF: Delete existing progress record
-      await strapi.documents('api::progress.progress').delete({
-        documentId: existingProgress.documentId,
+      await strapi.db.query('api::progress.progress').delete({
+        where: { id: existingProgress.id },
       });
       isCompleted = false;
     } else {
       // Toggle ON: Create new progress record
-      await strapi.documents('api::progress.progress').create({
+      await strapi.db.query('api::progress.progress').create({
         data: {
-          student: userDocId,
-          lesson: lessonDocId,
-          course: courseDocId,
+          student: user.id,
+          lesson: targetLesson.id,
+          course: targetCourse.id,
           completed_at: new Date().toISOString(),
         },
       });
@@ -134,13 +130,16 @@ export default factories.createCoreController('api::progress.progress', ({ strap
     }
 
     // Compute updated course progress
-    const totalLessons = targetCourse.lessons?.length || 0;
+    const allCourseLessons = await strapi.db.query('api::lesson.lesson').findMany({
+      where: { course: targetCourse.id },
+    });
+    const totalLessons = allCourseLessons.length;
     
     // Fetch all completed lessons for this student in this course
-    const allStudentProgress = await strapi.documents('api::progress.progress').findMany({
-      filters: {
-        student: { id: { $eq: user.id } },
-        course: { id: { $eq: targetCourse.id } },
+    const allStudentProgress = await strapi.db.query('api::progress.progress').findMany({
+      where: {
+        student: user.id,
+        course: targetCourse.id,
       },
       populate: ['lesson'],
     });
@@ -148,14 +147,14 @@ export default factories.createCoreController('api::progress.progress', ({ strap
     const completedLessons = allStudentProgress.length;
     const percentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
     const completedLessonIds = allStudentProgress
-      .map((p) => (p.lesson as any)?.documentId)
+      .map((p: any) => p.lesson?.documentId || String(p.lesson?.id))
       .filter(Boolean);
 
     return ctx.send({
       data: {
-        lessonId: lessonDocId,
+        lessonId: targetLesson.documentId || String(targetLesson.id),
         isCompleted,
-        courseId: courseDocId,
+        courseId: targetCourse.documentId || String(targetCourse.id),
         totalLessons,
         completedLessons,
         percentage,
@@ -173,27 +172,30 @@ export default factories.createCoreController('api::progress.progress', ({ strap
     }
 
     // Resolve course
-    const targetCourse = typeof courseId === 'string'
-      ? await strapi.documents('api::course.course').findOne({
-          documentId: courseId,
-          populate: ['lessons'],
-        })
-      : await strapi.db.query('api::course.course').findOne({
-          where: { id: courseId },
-          populate: ['lessons'],
-        });
+    const targetCourse = await strapi.db.query('api::course.course').findOne({
+      where: {
+        $or: [
+          ...(typeof courseId === 'string' ? [{ documentId: courseId }] : []),
+          ...(!isNaN(Number(courseId)) ? [{ id: Number(courseId) }] : []),
+        ],
+      },
+      populate: ['lessons'],
+    });
 
     if (!targetCourse) {
       return ctx.notFound('Course not found.');
     }
 
-    const totalLessons = targetCourse.lessons?.length || 0;
+    const allCourseLessons = await strapi.db.query('api::lesson.lesson').findMany({
+      where: { course: targetCourse.id },
+    });
+    const totalLessons = allCourseLessons.length;
 
     // Fetch all progress entries for this student & course
-    const allProgress = await strapi.documents('api::progress.progress').findMany({
-      filters: {
-        student: { id: { $eq: user.id } },
-        course: { id: { $eq: targetCourse.id } },
+    const allProgress = await strapi.db.query('api::progress.progress').findMany({
+      where: {
+        student: user.id,
+        course: targetCourse.id,
       },
       populate: ['lesson'],
     });
@@ -201,12 +203,12 @@ export default factories.createCoreController('api::progress.progress', ({ strap
     const completedLessons = allProgress.length;
     const percentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
     const completedLessonIds = allProgress
-      .map((p) => (p.lesson as any)?.documentId)
+      .map((p: any) => p.lesson?.documentId || String(p.lesson?.id))
       .filter(Boolean);
 
     return ctx.send({
       data: {
-        courseId: targetCourse.documentId,
+        courseId: targetCourse.documentId || String(targetCourse.id),
         totalLessons,
         completedLessons,
         percentage,

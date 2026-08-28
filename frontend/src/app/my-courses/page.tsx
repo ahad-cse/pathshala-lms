@@ -9,9 +9,20 @@ import { useAuth } from '@/context/AuthContext';
 import { enrollmentApi, progressApi } from '@/lib/api';
 import { CourseProgress, Enrollment } from '@/types/content';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function MyCoursesPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const router = useRouter();
+
+  // Seamless redirect for non-students
+  useEffect(() => {
+    if (role === 'admin' || role === 'content_manager') {
+      router.replace('/courses');
+    } else if (role === 'instructor') {
+      router.replace('/instructor/courses');
+    }
+  }, [role, router]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, CourseProgress>>({});
   const [loading, setLoading] = useState(true);
@@ -55,7 +66,7 @@ export default function MyCoursesPage() {
   }, [loadEnrollmentsAndProgress]);
 
   return (
-    <ProtectedRoute allowedRoles={['student']}>
+    <ProtectedRoute>
       <AppShell
         title="My Enrolled Courses & Progress"
         subtitle={`Live completion progress and enrolled curriculum for ${user?.username || 'Student'}`}

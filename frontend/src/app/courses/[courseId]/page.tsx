@@ -291,7 +291,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
 
         {/* Breadcrumb Navigation */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--ink-soft)' }}>
-          <Link href="/courses" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href={role === 'instructor' ? '/instructor/courses' : '/courses'} style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>
             Courses
           </Link>
           <span>/</span>

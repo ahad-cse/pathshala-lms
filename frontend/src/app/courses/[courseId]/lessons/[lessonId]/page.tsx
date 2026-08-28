@@ -591,7 +591,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                     Go to Course & Enroll →
                   </Link>
                   <Link
-                    href="/courses"
+                    href={role === 'instructor' ? '/instructor/courses' : (isStudent ? '/my-courses' : '/courses')}
                     style={{
                       padding: '10px 18px',
                       borderRadius: '8px',
@@ -813,7 +813,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                     >
                       <span>Take Course MCQ Quiz →</span>
                     </Link>
-                  ) : (
+                  ) : isStudent ? (
                     <Link
                       href="/my-courses"
                       style={{
@@ -830,6 +830,25 @@ export default function LessonViewerPage({ params }: PageProps) {
                       }}
                     >
                       <span>Track Finished • Return to My Courses</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/courses/${courseId}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--primary)',
+                        color: '#FFFFFF',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        boxShadow: '0 2px 6px rgba(242, 102, 42, 0.3)',
+                      }}
+                    >
+                      <span>Return to Course Curriculum →</span>
                     </Link>
                   )}
                 </div>

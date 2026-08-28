@@ -532,7 +532,7 @@ export default function CourseQuizPage({ params }: PageProps) {
               </button>
 
               <div style={{ fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Link href="/courses" style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>Courses</Link>
+                <Link href={role === 'instructor' ? '/instructor/courses' : (isStudent ? '/my-courses' : '/courses')} style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>Courses</Link>
                 <span>/</span>
                 <Link href={`/courses/${courseId}`} style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>{course?.title || 'Course'}</Link>
                 <span>/</span>

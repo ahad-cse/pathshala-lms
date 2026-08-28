@@ -18,8 +18,15 @@ import { useRouter } from 'next/navigation';
 
 export default function CoursesPage() {
   const { user, role } = useAuth();
-  const isStudent = (role || user?.role_type) === 'student';
   const router = useRouter();
+  const isStudent = (role || user?.role_type) === 'student';
+
+  // Seamless redirect for Instructor to their dedicated Studio
+  useEffect(() => {
+    if (role === 'instructor') {
+      router.replace('/instructor/courses');
+    }
+  }, [role, router]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
@@ -194,7 +201,7 @@ export default function CoursesPage() {
   const categories = ['All', ...Array.from(new Set(courses.map((c) => c.category).filter(Boolean)))];
 
   return (
-    <ProtectedRoute allowedRoles={['admin', 'content_manager', 'student']}>
+    <ProtectedRoute>
       <AppShell
         title="Courses"
         subtitle={

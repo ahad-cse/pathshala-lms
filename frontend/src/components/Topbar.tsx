@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth, ROLE_DETAILS } from '@/context/AuthContext';
 import { RoleType } from '@/types/auth';
 import Logo from '@/components/Logo';
@@ -15,6 +15,24 @@ export default function Topbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const pathname = usePathname();
+
+  const roleMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking anywhere outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (roleMenuRef.current && !roleMenuRef.current.contains(event.target as Node)) {
+        setShowRoleMenu(false);
+      }
+    }
+
+    if (showRoleMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showRoleMenu]);
 
   const currentRole: RoleType = role || 'student';
   const roleConfig = ROLE_DETAILS[currentRole] || ROLE_DETAILS.student;
@@ -212,7 +230,7 @@ export default function Topbar() {
         {/* Right Action Area: Demo Role Switcher, User Profile & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* Quick Demo Switcher Dropdown */}
-          <div style={{ position: 'relative' }}>
+          <div ref={roleMenuRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setShowRoleMenu(!showRoleMenu)}
               disabled={isSwitching}

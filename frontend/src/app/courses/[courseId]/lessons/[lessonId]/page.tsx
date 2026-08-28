@@ -7,8 +7,8 @@ import confetti from 'canvas-confetti';
 import React, { useEffect, useState, useCallback, use } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi, progressApi, quizApi, enrollmentApi } from '@/lib/api';
-import { Course, CourseProgress, Lesson, Quiz } from '@/types/content';
+import { courseApi, lessonApi, progressApi, quizApi, enrollmentApi, quizSubmissionApi } from '@/lib/api';
+import { Course, CourseProgress, Lesson, Quiz, QuizSubmission } from '@/types/content';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -30,6 +30,7 @@ export default function LessonViewerPage({ params }: PageProps) {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [quizSubmissionsMap, setQuizSubmissionsMap] = useState<Record<string, QuizSubmission>>({});
   const [loading, setLoading] = useState(true);
   const [togglingProgress, setTogglingProgress] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -38,7 +39,7 @@ export default function LessonViewerPage({ params }: PageProps) {
   const loadLessonData = useCallback(async () => {
     try {
       setLoading(true);
-      const [courseRes, lessonRes, enrollRes, progressRes, quizRes] = await Promise.all([
+      const [courseRes, lessonRes, enrollRes, progressRes, quizRes, subRes] = await Promise.all([
         courseApi.getOne(courseId),
         lessonApi.getOne(lessonId),
         isStudent ? enrollmentApi.getMyEnrollments().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
@@ -54,12 +55,25 @@ export default function LessonViewerPage({ params }: PageProps) {
             }))
           : Promise.resolve({ data: null }),
         quizApi.getByCourse(courseId).catch(() => ({ data: [] })),
+        isStudent ? quizSubmissionApi.getMySubmissions().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
       ]);
 
       setCourse(courseRes.data);
       setCurrentLesson(lessonRes.data);
       setProgress(progressRes.data);
       setQuizzes(quizRes.data || []);
+
+      if (isStudent) {
+        const subs = subRes.data || [];
+        const subDict: Record<string, QuizSubmission> = {};
+        subs.forEach((s: any) => {
+          const qDocId = s.quiz?.documentId || (s.quiz as any)?.id;
+          if (qDocId) {
+            subDict[String(qDocId)] = s;
+          }
+        });
+        setQuizSubmissionsMap(subDict);
+      }
 
       if (isStudent) {
         const myEnrollments = enrollRes.data || [];
@@ -405,29 +419,49 @@ export default function LessonViewerPage({ params }: PageProps) {
                 <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px', paddingLeft: '8px' }}>
                   Course Assessment
                 </div>
-                {quizzes.map((q) => (
-                  <Link
-                    key={q.documentId}
-                    href={`/courses/${courseId}/quizzes/${q.documentId}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: 'var(--warning-soft)',
-                      color: 'var(--warning)',
-                      textDecoration: 'none',
-                      fontWeight: 700,
-                      fontSize: '12.5px',
-                    }}
-                  >
-                    <span></span>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {q.title}
-                    </span>
-                  </Link>
-                ))}
+                {quizzes.map((q) => {
+                  const sub = quizSubmissionsMap[q.documentId] || (q.id ? quizSubmissionsMap[String(q.id)] : undefined);
+
+                  return (
+                    <Link
+                      key={q.documentId}
+                      href={`/courses/${courseId}/quizzes/${q.documentId}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '8px',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        backgroundColor: sub ? (sub.passed ? 'rgba(22, 163, 74, 0.08)' : 'rgba(239, 68, 68, 0.08)') : 'var(--warning-soft)',
+                        border: sub ? (sub.passed ? '1px solid rgba(22, 163, 74, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)') : '1px solid transparent',
+                        color: sub ? (sub.passed ? '#16A34A' : 'var(--danger)') : 'var(--warning)',
+                        textDecoration: 'none',
+                        fontWeight: 700,
+                        fontSize: '12.5px',
+                      }}
+                    >
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                        {q.title}
+                      </span>
+                      {sub && (
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 800,
+                            padding: '2px 7px',
+                            borderRadius: '99px',
+                            backgroundColor: sub.passed ? '#16A34A' : 'var(--danger)',
+                            color: '#FFFFFF',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {sub.score}% {sub.passed ? '✓' : '✗'}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>

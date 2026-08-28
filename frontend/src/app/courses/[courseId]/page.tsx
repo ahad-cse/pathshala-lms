@@ -8,8 +8,8 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi, enrollmentApi, quizApi, progressApi } from '@/lib/api';
-import { Course, Lesson, Quiz } from '@/types/content';
+import { courseApi, lessonApi, enrollmentApi, quizApi, progressApi, quizSubmissionApi } from '@/lib/api';
+import { Course, Lesson, Quiz, QuizSubmission } from '@/types/content';
 import StudentProgressTable from '@/components/StudentProgressTable';
 import CourseModal from '@/components/CourseModal';
 import LessonModal from '@/components/LessonModal';
@@ -36,6 +36,7 @@ export default function CourseDetailsPage({ params }: PageProps) {
   const [enrolling, setEnrolling] = useState(false);
   const [courseProgressPercent, setCourseProgressPercent] = useState<number | null>(null);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
+  const [quizSubmissionsMap, setQuizSubmissionsMap] = useState<Record<string, QuizSubmission>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'curriculum' | 'instructor' | 'students'>('curriculum');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -69,12 +70,13 @@ export default function CourseDetailsPage({ params }: PageProps) {
       const fetchedCourse = res.data;
       setCourse(fetchedCourse);
 
-      // If Student, check enrollment status & progress
+      // If Student, check enrollment status, progress & previous quiz scores
       if (isStudent && user) {
         try {
-          const [enrollRes, progRes] = await Promise.all([
+          const [enrollRes, progRes, subRes] = await Promise.all([
             enrollmentApi.getMyEnrollments().catch(() => ({ data: [] })),
             progressApi.getCourseProgress(courseId).catch(() => ({ data: null })),
+            quizSubmissionApi.getMySubmissions().catch(() => ({ data: [] })),
           ]);
 
           const myEnrollments = enrollRes.data || [];
@@ -87,8 +89,18 @@ export default function CourseDetailsPage({ params }: PageProps) {
             setCourseProgressPercent(progRes.data.percentage || 0);
             setCompletedLessonIds(progRes.data.completedLessonIds || []);
           }
+
+          const subs = subRes.data || [];
+          const subDict: Record<string, QuizSubmission> = {};
+          subs.forEach((s: any) => {
+            const qDocId = s.quiz?.documentId || (s.quiz as any)?.id;
+            if (qDocId) {
+              subDict[String(qDocId)] = s;
+            }
+          });
+          setQuizSubmissionsMap(subDict);
         } catch (e) {
-          console.error('Error loading student enrollment status:', e);
+          console.error('Error loading student enrollment status & scores:', e);
         }
       }
     } catch (err) {
@@ -897,48 +909,92 @@ export default function CourseDetailsPage({ params }: PageProps) {
                         )}
                       </div>
 
-                      {isStudent && !isEnrolled ? (
-                        <button
-                          onClick={() => { setEnrollModalContext('course'); setIsEnrollModalOpen(true); }}
-                          disabled={enrolling}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '8px',
-                            borderRadius: '7px',
-                            backgroundColor: 'var(--canvas)',
-                            color: 'var(--primary)',
-                            border: '1.5px solid var(--primary)',
-                            fontWeight: 700,
-                            fontSize: '12px',
-                            cursor: enrolling ? 'not-allowed' : 'pointer',
-                            width: '100%',
-                          }}
-                        >
-                          {enrolling ? 'Enrolling...' : 'Enroll to Unlock Quiz'}
-                        </button>
-                      ) : (
-                        <Link
-                          href={`/courses/${course.documentId}/quizzes/${quiz.documentId}`}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '8px',
-                            borderRadius: '7px',
-                            backgroundColor: isStudent ? 'var(--primary)' : 'var(--surface)',
-                            color: isStudent ? '#FFFFFF' : 'var(--ink)',
-                            border: isStudent ? 'none' : '1px solid var(--border)',
-                            fontWeight: 700,
-                            fontSize: '12px',
-                            textDecoration: 'none',
-                            boxShadow: isStudent ? '0 2px 6px rgba(242, 102, 42, 0.25)' : 'none',
-                          }}
-                        >
-                          <span>{isStudent ? 'Take Quiz →' : 'Preview Quiz →'}</span>
-                        </Link>
-                      )}
+                      {(() => {
+                        const previousSub = quizSubmissionsMap[quiz.documentId] || (quiz.id ? quizSubmissionsMap[String(quiz.id)] : undefined);
+
+                        if (isStudent && !isEnrolled) {
+                          return (
+                            <button
+                              onClick={() => { setEnrollModalContext('course'); setIsEnrollModalOpen(true); }}
+                              disabled={enrolling}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '8px',
+                                borderRadius: '7px',
+                                backgroundColor: 'var(--canvas)',
+                                color: 'var(--primary)',
+                                border: '1.5px solid var(--primary)',
+                                fontWeight: 700,
+                                fontSize: '12px',
+                                cursor: enrolling ? 'not-allowed' : 'pointer',
+                                width: '100%',
+                              }}
+                            >
+                              {enrolling ? 'Enrolling...' : 'Enroll to Unlock Quiz'}
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Previous Submission Score Banner */}
+                            {isStudent && previousSub && (
+                              <div
+                                style={{
+                                  padding: '7px 10px',
+                                  borderRadius: '8px',
+                                  backgroundColor: previousSub.passed ? 'rgba(22, 163, 74, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                                  border: previousSub.passed ? '1px solid rgba(22, 163, 74, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontSize: '12px' }}>{previousSub.passed ? '✓' : '⚠️'}</span>
+                                  <span style={{ fontSize: '11.5px', fontWeight: 700, color: previousSub.passed ? '#16A34A' : 'var(--danger)' }}>
+                                    Score: {previousSub.score}% ({previousSub.passed ? 'Passed' : 'Failed'})
+                                  </span>
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    padding: '1px 6px',
+                                    borderRadius: '99px',
+                                    backgroundColor: previousSub.passed ? '#16A34A' : 'var(--danger)',
+                                    color: '#FFFFFF',
+                                  }}
+                                >
+                                  {previousSub.passed ? 'Passed' : 'Retake'}
+                                </span>
+                              </div>
+                            )}
+
+                            <Link
+                              href={`/courses/${course.documentId}/quizzes/${quiz.documentId}`}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '8px',
+                                borderRadius: '7px',
+                                backgroundColor: isStudent ? (previousSub ? 'var(--canvas)' : 'var(--primary)') : 'var(--surface)',
+                                color: isStudent ? (previousSub ? 'var(--ink)' : '#FFFFFF') : 'var(--ink)',
+                                border: isStudent ? (previousSub ? '1px solid var(--border)' : 'none') : '1px solid var(--border)',
+                                fontWeight: 700,
+                                fontSize: '12px',
+                                textDecoration: 'none',
+                                boxShadow: isStudent && !previousSub ? '0 2px 6px rgba(242, 102, 42, 0.25)' : 'none',
+                              }}
+                            >
+                              <span>{isStudent ? (previousSub ? 'Retake Assessment Quiz ↻' : 'Take Quiz →') : 'Preview Quiz →'}</span>
+                            </Link>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>

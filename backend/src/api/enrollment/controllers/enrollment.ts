@@ -132,22 +132,18 @@ export default factories.createCoreController('api::enrollment.enrollment', ({ s
     }
 
     // Resolve course by documentId or numeric id
-    const targetCourse = typeof courseInput === 'string'
-      ? await strapi.documents('api::course.course').findOne({ documentId: courseInput })
-      : await strapi.db.query('api::course.course').findOne({ where: { id: courseInput } });
+    const targetCourse = await strapi.db.query('api::course.course').findOne({
+      where: {
+        $or: [
+          ...(typeof courseInput === 'string' ? [{ documentId: courseInput }] : []),
+          ...(!isNaN(Number(courseInput)) ? [{ id: Number(courseInput) }] : []),
+        ],
+      },
+    });
 
     if (!targetCourse) {
       return ctx.notFound('Course not found.');
     }
-
-    // Get user entry with documentId
-    const userEntry = await strapi.db.query('plugin::users-permissions.user').findOne({
-      where: { id: user.id },
-      select: ['id', 'documentId'],
-    });
-
-    const userDocId = userEntry?.documentId || user.documentId;
-    const courseDocId = targetCourse.documentId;
 
     // Check for existing enrollment to prevent duplicates
     const existingEnrollment = await strapi.db.query('api::enrollment.enrollment').findOne({
@@ -155,32 +151,21 @@ export default factories.createCoreController('api::enrollment.enrollment', ({ s
         student: user.id,
         course: targetCourse.id,
       },
+      populate: ['course', 'student'],
     });
 
     if (existingEnrollment) {
-      // Already enrolled, return existing enrollment smoothly
-      const fullEnrollment = await strapi.documents('api::enrollment.enrollment').findOne({
-        documentId: existingEnrollment.documentId,
-        populate: ['course', 'student'],
-      });
-      return ctx.send({ data: fullEnrollment, meta: { message: 'Already enrolled in this course.' } });
+      return ctx.send({ data: existingEnrollment, meta: { message: 'Already enrolled in this course.' } });
     }
 
-    // Create new enrollment
-    const newEnrollment = await strapi.documents('api::enrollment.enrollment').create({
+    // Create new enrollment via db.query to guarantee flawless relation resolution
+    const newEnrollment = await strapi.db.query('api::enrollment.enrollment').create({
       data: {
-        student: userDocId,
-        course: courseDocId,
+        student: user.id,
+        course: targetCourse.id,
         enrolled_at: new Date().toISOString(),
       },
-      populate: {
-        course: {
-          populate: ['instructor', 'lessons'],
-        },
-        student: {
-          fields: ['id', 'username', 'email'],
-        },
-      },
+      populate: ['course', 'student'],
     });
 
     return ctx.created({ data: newEnrollment });

@@ -208,20 +208,25 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
     }
 
     // Verify that the student is actively enrolled in this course
-    const courseId = (quiz.course as any)?.id;
     const courseDocId = (quiz.course as any)?.documentId;
+    let targetCourseId = (quiz.course as any)?.id;
 
-    const enrollment = await strapi.documents('api::enrollment.enrollment').findMany({
-      filters: {
-        student: { id: { $eq: user.id } },
-        $or: [
-          ...(courseId ? [{ course: { id: { $eq: courseId } } }] : []),
-          ...(courseDocId ? [{ course: { documentId: { $eq: courseDocId } } }] : []),
-        ],
+    if (!targetCourseId && courseDocId) {
+      const courseRecord = await strapi.db.query('api::course.course').findOne({
+        where: { documentId: courseDocId },
+        select: ['id'],
+      });
+      targetCourseId = courseRecord?.id;
+    }
+
+    const enrollment = targetCourseId ? await strapi.db.query('api::enrollment.enrollment').findOne({
+      where: {
+        student: user.id,
+        course: targetCourseId,
       },
-    });
+    }) : null;
 
-    if (!enrollment || enrollment.length === 0) {
+    if (!enrollment) {
       return ctx.forbidden('Access denied: You must be actively enrolled in this course to take its assessment quizzes.');
     }
 
@@ -274,11 +279,11 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
     const userDocId = userEntry?.documentId || user.documentId;
     const quizDocId = quiz.documentId;
 
-    // Persist QuizSubmission record
-    const submission = await strapi.documents('api::quiz-submission.quiz-submission').create({
+    // Persist QuizSubmission record via db.query
+    const submission = await strapi.db.query('api::quiz-submission.quiz-submission').create({
       data: {
-        student: userDocId,
-        quiz: quizDocId,
+        student: user.id,
+        quiz: quiz.id,
         score,
         passed,
         answers,

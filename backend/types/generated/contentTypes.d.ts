@@ -498,6 +498,10 @@ export interface ApiCourseCourse extends Struct.CollectionTypeSchema {
   attributes: {
     category: Schema.Attribute.String &
       Schema.Attribute.DefaultTo<'Web Development'>;
+    co_instructors: Schema.Attribute.Relation<
+      'manyToMany',
+      'plugin::users-permissions.user'
+    >;
     cover_color: Schema.Attribute.String &
       Schema.Attribute.DefaultTo<'#F2662A'>;
     cover_image_url: Schema.Attribute.String;

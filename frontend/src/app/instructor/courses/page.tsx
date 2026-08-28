@@ -4,10 +4,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi } from '@/lib/api';
-import { Course, Lesson } from '@/types/content';
+import { courseApi, lessonApi, quizApi } from '@/lib/api';
+import { Course, Lesson, Quiz } from '@/types/content';
 import CourseModal from '@/components/CourseModal';
 import LessonModal from '@/components/LessonModal';
+import QuizModal from '@/components/QuizModal';
+import Link from 'next/link';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function InstructorCoursesPage() {
@@ -23,9 +25,13 @@ export default function InstructorCoursesPage() {
   const [activeCourseForLesson, setActiveCourseForLesson] = useState<Course | null>(null);
   const [lessonToEdit, setLessonToEdit] = useState<Lesson | null>(null);
 
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [activeCourseForQuiz, setActiveCourseForQuiz] = useState<Course | null>(null);
+  const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null);
+
   const [deleteModalState, setDeleteModalState] = useState<{
     isOpen: boolean;
-    type: 'course' | 'lesson';
+    type: 'course' | 'lesson' | 'quiz';
     id: string;
     title: string;
   }>({
@@ -82,6 +88,27 @@ export default function InstructorCoursesPage() {
     setIsLessonModalOpen(true);
   };
 
+  const handleOpenAddQuiz = (course: Course) => {
+    setActiveCourseForQuiz(course);
+    setQuizToEdit(null);
+    setIsQuizModalOpen(true);
+  };
+
+  const handleOpenEditQuiz = (course: Course, quiz: Quiz) => {
+    setActiveCourseForQuiz(course);
+    setQuizToEdit(quiz);
+    setIsQuizModalOpen(true);
+  };
+
+  const handleDeleteQuizClick = (quiz: Quiz) => {
+    setDeleteModalState({
+      isOpen: true,
+      type: 'quiz',
+      id: quiz.documentId,
+      title: `Assessment Quiz: ${quiz.title}`,
+    });
+  };
+
   const handleDeleteCourseClick = (course: Course) => {
     setDeleteModalState({
       isOpen: true,
@@ -103,8 +130,10 @@ export default function InstructorCoursesPage() {
   const handleConfirmDelete = async () => {
     if (deleteModalState.type === 'course') {
       await courseApi.delete(deleteModalState.id);
-    } else {
+    } else if (deleteModalState.type === 'lesson') {
       await lessonApi.delete(deleteModalState.id);
+    } else if (deleteModalState.type === 'quiz') {
+      await quizApi.delete(deleteModalState.id);
     }
     loadMyCourses();
   };
@@ -157,7 +186,7 @@ export default function InstructorCoursesPage() {
                   marginBottom: '8px',
                 }}
               >
-                <span>✍️</span>
+                <span></span>
                 <span>Instructor Authoring Portal</span>
               </div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>
@@ -207,7 +236,7 @@ export default function InstructorCoursesPage() {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>📚</div>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}></div>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px' }}>
                 You have not created any courses yet
               </h3>
@@ -420,7 +449,7 @@ export default function InstructorCoursesPage() {
                                     </div>
                                     {lesson.video_url && (
                                       <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '2px' }}>
-                                        📹 Video Lesson Link Attached
+                                        Video Link Attached
                                       </div>
                                     )}
                                   </div>
@@ -463,6 +492,119 @@ export default function InstructorCoursesPage() {
                             ))}
                         </div>
                       )}
+
+                      {/* Course Assessment Quiz Management Section */}
+                      <div style={{ marginTop: '16px', borderTop: '1px dashed var(--border)', paddingTop: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--role-instructor)', textTransform: 'none' }}>
+                            Final Assessment Quiz
+                          </div>
+
+                          {(!course.quizzes || course.quizzes.length === 0) && (
+                            <button
+                              onClick={() => handleOpenAddQuiz(course)}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                backgroundColor: 'var(--role-instructor-soft)',
+                                color: 'var(--role-instructor)',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: '1px solid rgba(180, 83, 9, 0.25)',
+                              }}
+                            >
+                              + Create & Attach Quiz
+                            </button>
+                          )}
+                        </div>
+
+                        {course.quizzes && course.quizzes.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {course.quizzes.map((q) => (
+                              <div
+                                key={q.documentId || q.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '12px 16px',
+                                  borderRadius: '8px',
+                                  backgroundColor: 'var(--surface)',
+                                  border: '1.5px solid rgba(180, 83, 9, 0.3)',
+                                  gap: '10px',
+                                }}
+                              >
+                                <div>
+                                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span></span>
+                                    <span>{q.title}</span>
+                                  </div>
+                                  <div style={{ fontSize: '11.5px', color: 'var(--ink-faint)', marginTop: '2px' }}>
+                                    {q.questions?.length || 0} Questions • Passing Threshold: <strong style={{ color: 'var(--ink)' }}>{q.passing_score}%</strong>
+                                  </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <Link
+                                    href={`/courses/${course.documentId}/quizzes/${q.documentId}`}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      backgroundColor: 'var(--canvas)',
+                                      border: '1px solid var(--border)',
+                                      color: 'var(--ink)',
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      textDecoration: 'none',
+                                    }}
+                                  >
+                                    Preview Experience →
+                                  </Link>
+
+                                  <button
+                                    onClick={() => handleOpenEditQuiz(course, q)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '6px',
+                                      backgroundColor: 'var(--canvas)',
+                                      border: '1px solid var(--border)',
+                                      color: 'var(--ink)',
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Edit Quiz
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleDeleteQuizClick(q)}
+                                    style={{
+                                      padding: '6px 10px',
+                                      borderRadius: '6px',
+                                      backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                                      color: 'var(--danger)',
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ padding: '12px', textAlign: 'center', backgroundColor: 'var(--surface)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>
+                              No final assessment quiz attached. Attach an MCQ quiz to evaluate students upon course completion.
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -488,6 +630,18 @@ export default function InstructorCoursesPage() {
             targetCourse={activeCourseForLesson}
             lessonToEdit={lessonToEdit}
             defaultOrder={(activeCourseForLesson.lessons?.length || 0) + 1}
+          />
+        )}
+
+        {/* Quiz Modal */}
+        {activeCourseForQuiz && (
+          <QuizModal
+            isOpen={isQuizModalOpen}
+            onClose={() => setIsQuizModalOpen(false)}
+            onSuccess={loadMyCourses}
+            courseDocumentId={activeCourseForQuiz.documentId}
+            courseTitle={activeCourseForQuiz.title}
+            quiz={quizToEdit}
           />
         )}
 

@@ -12,7 +12,10 @@ export default factories.createCoreController('api::course.course', ({ strapi })
       ...ctx.query,
       populate: {
         instructor: {
-          fields: ['id', 'username', 'email', 'role_type'],
+          fields: ['id', 'username', 'email', 'role_type', 'full_name', 'avatar_url'],
+        },
+        co_instructors: {
+          fields: ['id', 'username', 'email', 'role_type', 'full_name', 'avatar_url'],
         },
         lessons: {
           fields: ['id', 'title', 'order', 'video_url'],
@@ -20,6 +23,9 @@ export default factories.createCoreController('api::course.course', ({ strapi })
         },
         quizzes: {
           fields: ['id', 'documentId', 'title', 'passing_score'],
+        },
+        enrollments: {
+          fields: ['id'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
@@ -33,7 +39,10 @@ export default factories.createCoreController('api::course.course', ({ strapi })
       ...ctx.query,
       populate: {
         instructor: {
-          fields: ['id', 'username', 'email', 'role_type'],
+          fields: ['id', 'username', 'email', 'role_type', 'full_name', 'avatar_url'],
+        },
+        co_instructors: {
+          fields: ['id', 'username', 'email', 'role_type', 'full_name', 'avatar_url'],
         },
         lessons: {
           fields: ['id', 'title', 'order', 'video_url', 'content'],
@@ -41,6 +50,9 @@ export default factories.createCoreController('api::course.course', ({ strapi })
         },
         quizzes: {
           fields: ['id', 'documentId', 'title', 'passing_score'],
+        },
+        enrollments: {
+          fields: ['id'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
@@ -100,7 +112,7 @@ export default factories.createCoreController('api::course.course', ({ strapi })
     if (user.role_type === 'instructor') {
       const course = await strapi.documents('api::course.course').findOne({
         documentId: id,
-        populate: ['instructor'],
+        populate: ['instructor', 'co_instructors'],
       });
 
       if (!course) {
@@ -110,12 +122,16 @@ export default factories.createCoreController('api::course.course', ({ strapi })
       const courseInstructorId = (course.instructor as any)?.id;
       const courseInstructorDocId = (course.instructor as any)?.documentId;
 
-      const isOwner =
+      const isLeadOwner =
         (courseInstructorId && courseInstructorId === user.id) ||
         (courseInstructorDocId && courseInstructorDocId === user.documentId);
 
-      if (!isOwner) {
-        return ctx.forbidden('Access denied: You can only edit your own courses.');
+      const isCoInstructor = ((course as any).co_instructors as any[])?.some(
+        (ci) => ci.id === user.id || ci.documentId === user.documentId
+      );
+
+      if (!isLeadOwner && !isCoInstructor) {
+        return ctx.forbidden('Access denied: You can only edit courses where you are an assigned instructor.');
       }
     }
 
@@ -138,7 +154,7 @@ export default factories.createCoreController('api::course.course', ({ strapi })
     if (user.role_type === 'instructor') {
       const course = await strapi.documents('api::course.course').findOne({
         documentId: id,
-        populate: ['instructor'],
+        populate: ['instructor', 'co_instructors'],
       });
 
       if (!course) {

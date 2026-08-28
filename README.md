@@ -121,27 +121,6 @@ The production database is pre-seeded with active data across all 4 roles so eva
 
 ---
 
-## 4-Tier Role-Based Access Control (RBAC) Matrix
-
-Security is enforced strictly at the **backend controller and database query level**. Frontend route guards exist for optimal user experience, but every API endpoint rejects unauthorized requests with HTTP `401 Unauthorized` or `403 Forbidden`:
-
-| Feature / Action | Admin | Content Manager | Instructor | Student | Public Visitor |
-|---|:---:|:---:|:---:|:---:|:---:|
-| **Browse Courses & Lessons Catalog** | Yes | Yes | Yes | Yes | Yes |
-| **Enroll in Courses** | No | No | No | Yes | No |
-| **Sequential Video Player & Mark Completed** | No | No | No | Yes | No |
-| **Create & Edit Own Courses** | Yes | Yes | Yes *(Own)* | No | No |
-| **Manage Lessons & Video Lecture URLs** | Yes | Yes | Yes *(Own)* | No | No |
-| **Create MCQ Quizzes** | Yes | Yes | Yes *(Own)* | No | No |
-| **Preview Quiz Experience (Read-Only)** | Yes | Yes | Yes | No | No |
-| **Submit Quiz for Server Auto-Grading** | No *(Author View)* | No *(Author View)* | No *(Author View)* | Yes *(Graded)* | No |
-| **Read Published Blog Articles** | Yes | Yes | Yes | Yes | Yes |
-| **View Draft Blog Posts** | Yes | Yes | No *(404 Isolated)* | No *(404 Isolated)* | No *(404 Isolated)* |
-| **Create / Edit / Publish / Delete Blog Posts** | Yes | Yes | No | No | No |
-| **Admin Control Panel & Live Role Switcher** | Yes | No *(403 Blocked)* | No *(403 Blocked)* | No *(403 Blocked)* | No *(403 Blocked)* |
-
----
-
 ## Key Features Implemented
 
 ### 1. Sequential Lesson Viewer & Course Progress Engine

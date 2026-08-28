@@ -37,6 +37,22 @@ export default factories.createCoreController('api::quiz-submission.quiz-submiss
       };
     }
 
+    // If Instructor, strictly scope to submissions for own courses
+    if (user.role_type === 'instructor') {
+      ctx.query.filters = {
+        ...(typeof ctx.query.filters === 'object' ? ctx.query.filters : {}),
+        quiz: {
+          course: {
+            instructor: {
+              id: {
+                $eq: user.id,
+              },
+            },
+          },
+        },
+      };
+    }
+
     return super.find(ctx);
   },
 }));

@@ -127,7 +127,7 @@ export default function QuizSubmitModal({
             gap: '8px',
           }}
         >
-          <span style={{ fontSize: '15px' }}>📝</span>
+          <span style={{ fontSize: '15px' }}></span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {quizTitle}
           </span>
@@ -193,7 +193,7 @@ export default function QuizSubmitModal({
               lineHeight: 1.45,
             }}
           >
-            <span>⚠️</span>
+            <span></span>
             <span>
               You have <strong>{unansweredCount}</strong> unanswered question(s). Unanswered questions will be scored as 0 points.
             </span>

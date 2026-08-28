@@ -14,6 +14,7 @@ import {
   QuizEvaluationResult,
   QuizFormData,
   QuizSubmission,
+  Progress,
 } from '@/types/content';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
@@ -229,6 +230,12 @@ export const lessonApi = {
  * Enrollment API Service
  */
 export const enrollmentApi = {
+  async getAll(): Promise<{ data: Enrollment[] }> {
+    return apiFetch<{ data: Enrollment[] }>('/api/enrollments', {
+      method: 'GET',
+    });
+  },
+
   async getMyEnrollments(): Promise<{ data: Enrollment[] }> {
     return apiFetch<{ data: Enrollment[] }>('/api/enrollments', {
       method: 'GET',
@@ -251,6 +258,12 @@ export const enrollmentApi = {
  * Progress Tracking API Service
  */
 export const progressApi = {
+  async getAll(): Promise<{ data: Progress[] }> {
+    return apiFetch<{ data: Progress[] }>('/api/progresses', {
+      method: 'GET',
+    });
+  },
+
   async toggleLesson(lessonId: string, courseId: string): Promise<{
     data: {
       lessonId: string;
@@ -338,6 +351,12 @@ export const quizApi = {
  * Quiz Submission Historic Results API Service
  */
 export const quizSubmissionApi = {
+  async getAll(): Promise<{ data: QuizSubmission[] }> {
+    return apiFetch<{ data: QuizSubmission[] }>('/api/quiz-submissions', {
+      method: 'GET',
+    });
+  },
+
   async getMySubmissions(): Promise<{ data: QuizSubmission[] }> {
     return apiFetch<{ data: QuizSubmission[] }>('/api/quiz-submissions', {
       method: 'GET',

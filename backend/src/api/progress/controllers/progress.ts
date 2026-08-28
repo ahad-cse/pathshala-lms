@@ -41,6 +41,20 @@ export default factories.createCoreController('api::progress.progress', ({ strap
       };
     }
 
+    // If Instructor, strictly scope to progress records for own courses
+    if (user.role_type === 'instructor') {
+      ctx.query.filters = {
+        ...(typeof ctx.query.filters === 'object' ? ctx.query.filters : {}),
+        course: {
+          instructor: {
+            id: {
+              $eq: user.id,
+            },
+          },
+        },
+      };
+    }
+
     return super.find(ctx);
   },
 

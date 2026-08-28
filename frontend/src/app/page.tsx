@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth, ROLE_DETAILS } from '@/context/AuthContext';
 import { RoleType } from '@/types/auth';
-import { blogApi, courseApi } from '@/lib/api';
+import { blogApi, courseApi, enrollmentApi, progressApi } from '@/lib/api';
 import { BlogPost, Course } from '@/types/content';
 
 export default function HomePage() {
@@ -16,6 +16,8 @@ export default function HomePage() {
   const [visibleCourseCount, setVisibleCourseCount] = useState(6);
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
   const [visiblePostCount, setVisiblePostCount] = useState(6);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
 
 
   const roleDashboardLabel = role === 'admin'
@@ -37,9 +39,11 @@ export default function HomePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [postsRes, coursesRes] = await Promise.allSettled([
+        const [postsRes, coursesRes, enrollRes, progRes] = await Promise.allSettled([
           blogApi.getAll(),
           courseApi.getAll(),
+          user && role === 'student' ? enrollmentApi.getMyEnrollments() : Promise.resolve({ data: [] }),
+          user && role === 'student' ? progressApi.getAll() : Promise.resolve({ data: [] }),
         ]);
         if (postsRes.status === 'fulfilled') {
           setLatestPosts(postsRes.value.data || []);
@@ -47,12 +51,34 @@ export default function HomePage() {
         if (coursesRes.status === 'fulfilled') {
           setCourses(coursesRes.value.data || []);
         }
+        if (enrollRes.status === 'fulfilled') {
+          const enrollments = enrollRes.value.data || [];
+          const ids = enrollments.map((e: any) => e.course?.documentId || String(e.course?.id)).filter(Boolean);
+          setEnrolledCourseIds(ids);
+
+          const progDict: Record<string, number> = {};
+          enrollments.forEach((e: any) => {
+            if (e.progress_percent !== undefined) {
+              if (e.course?.documentId) progDict[e.course.documentId] = e.progress_percent;
+              if (e.course?.id) progDict[String(e.course.id)] = e.progress_percent;
+            }
+          });
+
+          if (progRes.status === 'fulfilled') {
+            (progRes.value.data || []).forEach((p: any) => {
+              const k = p.course?.documentId || String(p.course?.id);
+              if (k && p.percentage !== undefined) progDict[k] = p.percentage;
+            });
+          }
+
+          setProgressMap(progDict);
+        }
       } catch (err) {
         console.error('Failed to load homepage data:', err);
       }
     }
     loadData();
-  }, []);
+  }, [user, role]);
 
 
   return (
@@ -248,7 +274,7 @@ export default function HomePage() {
       {/* Floating Interactive Glass Cards around Hero (Desktop / Tablet) */}
       <div className="float-card-1 desktop-floating-badge" style={{ position: 'absolute', left: '3%', top: '220px', padding: '10px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(16px)', boxShadow: '0 16px 35px rgba(242, 102, 42, 0.12)', border: '1px solid rgba(242, 102, 42, 0.25)', zIndex: 2, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>🎓</span>
+          <span style={{ fontSize: '20px' }}></span>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ink)' }}>Auto-Graded Quizzes</div>
             <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -260,10 +286,10 @@ export default function HomePage() {
 
       <div className="float-card-2 desktop-floating-badge" style={{ position: 'absolute', right: '3%', top: '200px', padding: '10px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(16px)', boxShadow: '0 16px 35px rgba(79, 70, 229, 0.12)', border: '1px solid rgba(79, 70, 229, 0.25)', zIndex: 2, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>⚡</span>
+          <span style={{ fontSize: '20px' }}></span>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ink)' }}>Real-Time Tracking</div>
-            <div style={{ fontSize: '11px', color: 'var(--role-admin)', fontWeight: 700 }}>● 100% Persisted</div>
+            <div style={{ fontSize: '11px', color: 'var(--role-admin)', fontWeight: 700 }}>100% Persisted</div>
           </div>
         </div>
       </div>
@@ -663,6 +689,7 @@ export default function HomePage() {
           >
             {courses.slice(0, visibleCourseCount).map((course) => {
               const lessonCount = course.lessons?.length || 0;
+              const isEnrolled = enrolledCourseIds.includes(course.documentId) || enrolledCourseIds.includes(String(course.id));
               return (
                 <div
                   key={course.id || course.documentId}
@@ -758,20 +785,28 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1, gap: '10px' }}>
 
-                    {/* Title */}
-                    <h3
-                      style={{
-                        fontSize: '17px',
-                        fontWeight: 700,
-                        color: 'var(--ink)',
-                        margin: '0 0 8px',
-                        lineHeight: 1.35,
-                      }}
+                    {/* Title linked to Course Slug */}
+                    <Link
+                      href={`/courses/${course.documentId}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      {course.title}
-                    </h3>
+                      <h3
+                        style={{
+                          fontSize: '17px',
+                          fontWeight: 700,
+                          color: 'var(--ink)',
+                          margin: '0 0 4px',
+                          lineHeight: 1.35,
+                          transition: 'color 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ink)')}
+                      >
+                        {course.title}
+                      </h3>
+                    </Link>
 
                     {/* Description */}
                     <p
@@ -779,7 +814,7 @@ export default function HomePage() {
                         fontSize: '13px',
                         color: 'var(--ink-soft)',
                         lineHeight: 1.55,
-                        margin: '0 0 20px',
+                        margin: '0 0 10px',
                         flex: 1,
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
@@ -790,35 +825,89 @@ export default function HomePage() {
                       {course.description || 'Master key concepts with structured hands-on lessons.'}
                     </p>
 
-                    {/* Footer Action */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        borderTop: '1px solid var(--border-soft)',
-                        paddingTop: '14px',
-                        marginTop: 'auto',
-                      }}
-                    >
-                      <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                        Instructor: <strong>{course.instructor?.username || 'PathShala Faculty'}</strong>
-                      </div>
-                      <Link
-                        href={courseAction.href}
-                        style={{
-                          fontSize: '12.5px',
-                          fontWeight: 700,
-                          color: 'var(--primary)',
-                          textDecoration: 'none',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <>{courseAction.label.replace(" →", "")} <span className="action-arrow">→</span></>
-                      </Link>
-                    </div>
+                    {/* Progress indicator for enrolled student */}
+                    {isEnrolled && (() => {
+                      const pct = progressMap[course.documentId] ?? progressMap[String(course.id)] ?? 0;
+                      return (
+                        <div style={{ backgroundColor: 'var(--canvas)', borderRadius: '8px', padding: '6px 10px', border: '1px solid var(--border-soft)', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, marginBottom: '4px' }}>
+                            <span style={{ color: 'var(--ink-soft)' }}>Progress</span>
+                            <span style={{ color: pct === 100 ? '#16A34A' : 'var(--primary)' }}>{pct}%</span>
+                          </div>
+                          <div style={{ height: '4px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct === 100 ? '#16A34A' : 'var(--primary)', borderRadius: '99px' }} />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Footer Action: Role-Tailored CTA Button */}
+                    {(() => {
+                      const isManager = role === 'admin' || role === 'content_manager';
+                      const isAuthor =
+                        role === 'instructor' &&
+                        ((course.instructor?.id && course.instructor.id === user?.id) ||
+                          (course.instructor?.documentId && course.instructor.documentId === user?.documentId) ||
+                          course.co_instructors?.some((ci) => ci.id === user?.id || ci.documentId === user?.documentId));
+
+                      let ctaLabel = 'Enroll Now';
+                      let ctaColor = 'var(--primary)';
+
+                      if (isManager) {
+                        ctaLabel = 'Manage Course';
+                      } else if (role === 'instructor') {
+                        ctaLabel = isAuthor ? 'Manage Course' : 'View Course';
+                      } else if (isEnrolled) {
+                        ctaLabel = 'Continue Learning';
+                        ctaColor = '#16A34A';
+                      }
+
+                      return (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            borderTop: '1px solid var(--border-soft)',
+                            paddingTop: '12px',
+                            marginTop: 'auto',
+                          }}
+                        >
+                          {isEnrolled ? (
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                padding: '2px 8px',
+                                borderRadius: '99px',
+                                backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                                color: '#16A34A',
+                              }}
+                            >
+                              Enrolled
+                            </span>
+                          ) : (
+                            <div />
+                          )}
+
+                          <Link
+                            href={`/courses/${course.documentId}`}
+                            style={{
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              color: ctaColor,
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <span>{ctaLabel}</span>
+                            <span className="action-arrow">→</span>
+                          </Link>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );

@@ -7,6 +7,7 @@ export interface User {
   email: string;
   full_name?: string;
   avatar_url?: string;
+  bio?: string;
   role_type: RoleType;
   confirmed?: boolean;
   blocked?: boolean;
@@ -30,4 +31,5 @@ export interface RegisterCredentials {
   password: string;
   full_name?: string;
   avatar_url?: string;
+  bio?: string;
 }

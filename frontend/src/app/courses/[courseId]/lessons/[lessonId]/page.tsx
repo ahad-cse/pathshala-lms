@@ -277,7 +277,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                       </div>
                       {lesson.video_url && (
                         <div style={{ fontSize: '11px', color: 'var(--ink-faint)', marginTop: '2px' }}>
-                          📹 Video Stream
+                          Video Stream
                         </div>
                       )}
                     </div>
@@ -295,7 +295,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                 {quizzes.map((q) => (
                   <Link
                     key={q.documentId}
-                    href={`/courses/${courseId}/quiz/${q.documentId}`}
+                    href={`/courses/${courseId}/quizzes/${q.documentId}`}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -309,7 +309,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                       fontSize: '12.5px',
                     }}
                   >
-                    <span>🎯</span>
+                    <span></span>
                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {q.title}
                     </span>
@@ -385,7 +385,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                   color: 'var(--ink)',
                 }}
               >
-                <span style={{ color: 'var(--primary)' }}>⚡ {progress?.percentage || 0}% Done</span>
+                <span style={{ color: 'var(--primary)' }}>{progress?.percentage || 0}% Done</span>
                 <span style={{ color: 'var(--ink-faint)' }}>•</span>
                 <span style={{ color: 'var(--ink-soft)' }}>{progress?.completedLessons || 0}/{sortedLessons.length}</span>
               </div>
@@ -590,7 +590,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                     </Link>
                   ) : quizzes.length > 0 ? (
                     <Link
-                      href={`/courses/${courseId}/quiz/${quizzes[0].documentId}`}
+                      href={`/courses/${courseId}/quizzes/${quizzes[0].documentId}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -605,7 +605,7 @@ export default function LessonViewerPage({ params }: PageProps) {
                         boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)',
                       }}
                     >
-                      <span>🎯 Take Course MCQ Quiz →</span>
+                      <span>Take Course MCQ Quiz →</span>
                     </Link>
                   ) : (
                     <Link

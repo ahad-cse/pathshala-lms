@@ -26,7 +26,7 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
       populate: {
         course: {
           fields: ['id', 'title', 'category'],
-          populate: ['instructor'],
+          populate: ['instructor', 'co_instructors'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
@@ -58,11 +58,11 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
       const course = typeof courseId === 'string'
         ? await strapi.documents('api::course.course').findOne({
             documentId: courseId,
-            populate: ['instructor'],
+            populate: ['instructor', 'co_instructors'],
           })
         : await strapi.db.query('api::course.course').findOne({
             where: { id: courseId },
-            populate: ['instructor'],
+            populate: ['instructor', 'co_instructors'],
           });
 
       if (!course) {
@@ -72,10 +72,13 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
       const instructorId = (course.instructor as any)?.id;
       const instructorDocId = (course.instructor as any)?.documentId;
 
-      const isOwner = (instructorId && instructorId === user.id) ||
-                      (instructorDocId && instructorDocId === user.documentId);
+      const isLeadOwner = (instructorId && instructorId === user.id) ||
+                          (instructorDocId && instructorDocId === user.documentId);
+      const isCoInstructor = ((course as any)?.co_instructors || [])?.some(
+        (ci: any) => ci.id === user.id || ci.documentId === user.documentId
+      );
 
-      if (!isOwner) {
+      if (!isLeadOwner && !isCoInstructor) {
         return ctx.forbidden('Access denied: You can only add lessons to your own courses.');
       }
     }
@@ -101,7 +104,7 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
         documentId: id,
         populate: {
           course: {
-            populate: ['instructor'],
+            populate: ['instructor', 'co_instructors'],
           },
         },
       });
@@ -113,10 +116,13 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
       const instructorId = (lesson as any).course?.instructor?.id;
       const instructorDocId = (lesson as any).course?.instructor?.documentId;
 
-      const isOwner = (instructorId && instructorId === user.id) ||
-                      (instructorDocId && instructorDocId === user.documentId);
+      const isLeadOwner = (instructorId && instructorId === user.id) ||
+                          (instructorDocId && instructorDocId === user.documentId);
+      const isCoInstructor = ((lesson as any)?.course?.co_instructors || [])?.some(
+        (ci: any) => ci.id === user.id || ci.documentId === user.documentId
+      );
 
-      if (!isOwner) {
+      if (!isLeadOwner && !isCoInstructor) {
         return ctx.forbidden('Access denied: You can only edit lessons from your own courses.');
       }
     }
@@ -142,7 +148,7 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
         documentId: id,
         populate: {
           course: {
-            populate: ['instructor'],
+            populate: ['instructor', 'co_instructors'],
           },
         },
       });
@@ -154,10 +160,13 @@ export default factories.createCoreController('api::lesson.lesson', ({ strapi })
       const instructorId = (lesson as any).course?.instructor?.id;
       const instructorDocId = (lesson as any).course?.instructor?.documentId;
 
-      const isOwner = (instructorId && instructorId === user.id) ||
-                      (instructorDocId && instructorDocId === user.documentId);
+      const isLeadOwner = (instructorId && instructorId === user.id) ||
+                          (instructorDocId && instructorDocId === user.documentId);
+      const isCoInstructor = ((lesson as any)?.course?.co_instructors || [])?.some(
+        (ci: any) => ci.id === user.id || ci.documentId === user.documentId
+      );
 
-      if (!isOwner) {
+      if (!isLeadOwner && !isCoInstructor) {
         return ctx.forbidden('Access denied: You can only delete lessons from your own courses.');
       }
     }

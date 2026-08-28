@@ -4,20 +4,24 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
 import { useAuth } from '@/context/AuthContext';
-import { courseApi, lessonApi, enrollmentApi } from '@/lib/api';
-import { Course, Lesson, Enrollment } from '@/types/content';
+import { courseApi, lessonApi, enrollmentApi, quizApi } from '@/lib/api';
+import { Course, Lesson, Enrollment, Quiz } from '@/types/content';
 import CourseModal from '@/components/CourseModal';
 import LessonModal from '@/components/LessonModal';
+import QuizModal from '@/components/QuizModal';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import EnrollConfirmModal from '@/components/EnrollConfirmModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function CoursesPage() {
   const { user, role } = useAuth();
+  const isStudent = (role || user?.role_type) === 'student';
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(6);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,14 +31,19 @@ export default function CoursesPage() {
   // Modals state
   const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
+  const [courseToEnroll, setCourseToEnroll] = useState<Course | null>(null);
 
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [activeCourseForLesson, setActiveCourseForLesson] = useState<Course | null>(null);
   const [lessonToEdit, setLessonToEdit] = useState<Lesson | null>(null);
 
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [activeCourseForQuiz, setActiveCourseForQuiz] = useState<Course | null>(null);
+  const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null);
+
   const [deleteModalState, setDeleteModalState] = useState<{
     isOpen: boolean;
-    type: 'course' | 'lesson';
+    type: 'course' | 'lesson' | 'quiz';
     id: string;
     title: string;
   }>({
@@ -122,6 +131,27 @@ export default function CoursesPage() {
     setIsLessonModalOpen(true);
   };
 
+  const handleOpenAddQuiz = (course: Course) => {
+    setActiveCourseForQuiz(course);
+    setQuizToEdit(null);
+    setIsQuizModalOpen(true);
+  };
+
+  const handleOpenEditQuiz = (course: Course, quiz: Quiz) => {
+    setActiveCourseForQuiz(course);
+    setQuizToEdit(quiz);
+    setIsQuizModalOpen(true);
+  };
+
+  const handleDeleteQuizClick = (quiz: Quiz) => {
+    setDeleteModalState({
+      isOpen: true,
+      type: 'quiz',
+      id: quiz.documentId,
+      title: `Delete Assessment Quiz: "${quiz.title}"?`,
+    });
+  };
+
   const handleDeleteCourseClick = (course: Course) => {
     setDeleteModalState({
       isOpen: true,
@@ -143,8 +173,10 @@ export default function CoursesPage() {
   const handleConfirmDelete = async () => {
     if (deleteModalState.type === 'course') {
       await courseApi.delete(deleteModalState.id);
-    } else {
+    } else if (deleteModalState.type === 'lesson') {
       await lessonApi.delete(deleteModalState.id);
+    } else if (deleteModalState.type === 'quiz') {
+      await quizApi.delete(deleteModalState.id);
     }
     loadData();
   };
@@ -293,7 +325,7 @@ export default function CoursesPage() {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔍</div>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}></div>
               <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 4px' }}>
                 No courses found
               </h3>
@@ -304,470 +336,294 @@ export default function CoursesPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
               {filteredCourses.slice(0, visibleCount).map((course) => {
-                const isManaged = canManageCourse(course);
-                const isExpanded = expandedCourseId === course.documentId;
-                const lessonsCount = course.lessons?.length || 0;
-                const isEnrolled = enrolledCourseIds.has(course.documentId);
-                const isEnrolling = enrollingCourseId === course.documentId;
-                const firstLesson = course.lessons?.sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+              const lessonsCount = course.lessons?.length || 0;
+              const quizzesCount = course.quizzes?.length || 0;
+              const isEnrolled = enrolledCourseIds.has(course.documentId);
+              const enrollmentCount = (course.enrollments as any[])?.length || 0;
+              const isManaged = canManageCourse(course);
 
-                return (
+              return (
+                <div
+                  key={course.documentId || course.id}
+                  className="interactive-card"
+                  style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: '16px',
+                    border: '1px solid var(--border)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 24px -6px rgba(0, 0, 0, 0.08)';
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.03)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                  }}
+                >
+                  {/* Card Cover Banner */}
                   <div
-                    key={course.documentId}
-                    className="interactive-card"
                     style={{
-                      backgroundColor: 'var(--surface)',
-                      borderRadius: '16px',
-                      border: '1px solid var(--border)',
+                      height: '115px',
+                      background: `linear-gradient(135deg, ${course.cover_color || 'var(--primary)'} 0%, #0F172A 100%)`,
+                      position: 'relative',
                       overflow: 'hidden',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
                     }}
                   >
-                    {/* Course Banner Header */}
-                    <div
-                      style={{
-                        height: '120px',
-                        background: `linear-gradient(135deg, ${course.cover_color || 'var(--primary)'} 0%, #0F172A 100%)`,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        color: '#FFFFFF',
-                      }}
-                    >
-                      {course.cover_image_url && (
-                        <img
-                          src={course.cover_image_url}
-                          alt={course.title}
-                          className="card-media"
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                        />
-                      )}
-                      <div
+                    {course.cover_image_url && (
+                      <img
+                        src={course.cover_image_url}
+                        alt={course.title}
+                        className="card-media"
                         style={{
                           position: 'absolute',
                           top: 0,
                           left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: course.cover_image_url
-                            ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.75) 100%)'
-                            : 'transparent',
-                          padding: '16px 20px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
                         }}
-                      >
+                      />
+                    )}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: course.cover_image_url
+                          ? 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.7) 100%)'
+                          : 'transparent',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                      }}
+                    >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span
                           style={{
                             fontSize: '11px',
                             fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            backgroundColor: 'rgba(0, 0, 0, 0.25)',
-                            textTransform: 'none',
-                            letterSpacing: '0.04em',
+                            padding: '3px 10px',
+                            borderRadius: '99px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            color: 'var(--ink)',
+                            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)',
                           }}
                         >
-                          {course.category}
+                          {course.category || 'General'}
                         </span>
 
                         {isManaged && (
-                          <div style={{ display: 'flex', gap: '6px' }}>
+                          <div style={{ display: 'flex', gap: '4px' }}>
                             <button
                               onClick={() => handleOpenEditCourse(course)}
-                              title="Edit Course Metadata"
+                              title="Edit Course"
                               style={{
-                                width: '28px',
-                                height: '28px',
+                                padding: '4px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                                color: '#FFFFFF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                                border: 'none',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: 'var(--ink)',
                                 cursor: 'pointer',
                               }}
                             >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                              </svg>
+                              Edit
                             </button>
                             <button
                               onClick={() => handleDeleteCourseClick(course)}
                               title="Delete Course"
                               style={{
-                                width: '28px',
-                                height: '28px',
+                                padding: '4px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: 'rgba(220, 38, 38, 0.8)',
-                                color: '#FFFFFF',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                              </svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      <h3
-                        style={{
-                          fontSize: '17px',
-                          fontWeight: 800,
-                          margin: 0,
-                          color: '#FFFFFF',
-                          lineHeight: 1.25,
-                        }}
-                      >
-                        {course.title}
-                      </h3>
-                      </div>
-                    </div>
-
-                    {/* Course Details Body */}
-                    <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <p
-                        style={{
-                          fontSize: '13px',
-                          color: 'var(--ink-soft)',
-                          margin: '0 0 16px',
-                          lineHeight: 1.5,
-                          flex: 1,
-                        }}
-                      >
-                        {course.description}
-                      </p>
-
-                      {/* Instructor & Metadata Footer */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          borderTop: '1px solid var(--border-soft)',
-                          paddingTop: '14px',
-                          fontSize: '12.5px',
-                          color: 'var(--ink-faint)',
-                          marginBottom: '12px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span
-                            style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: 'var(--border-soft)',
-                              color: 'var(--ink)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '10px',
-                              fontWeight: 700,
-                            }}
-                          >
-                            {course.instructor?.username?.charAt(0).toUpperCase() || 'S'}
-                          </span>
-                          <span style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                            {course.instructor?.username || 'Staff Author'}
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontWeight: 600, color: 'var(--ink-soft)' }}>
-                            {lessonsCount} {lessonsCount === 1 ? 'Lesson' : 'Lessons'}
-                          </span>
-                          {course.quizzes && course.quizzes.length > 0 && (
-                            <span
-                              style={{
+                                backgroundColor: 'rgba(220, 38, 38, 0.92)',
+                                border: 'none',
                                 fontSize: '11px',
                                 fontWeight: 700,
-                                padding: '2px 7px',
-                                borderRadius: '6px',
-                                backgroundColor: 'var(--warning-soft)',
-                                color: 'var(--warning)',
-                                border: '1px solid rgba(245, 158, 11, 0.25)',
-                              }}
-                            >
-                              Quiz Attached
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Student Enrollment CTA Button */}
-                      {role === 'student' && (
-                        <div style={{ marginBottom: '10px' }}>
-                          {isEnrolled ? (
-                            <Link
-                              href={firstLesson ? `/courses/${course.documentId}/lessons/${firstLesson.documentId}` : '/my-courses'}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                width: '100%',
-                                padding: '10px',
-                                borderRadius: '8px',
-                                backgroundColor: 'var(--success-soft)',
-                                color: 'var(--success)',
-                                border: '1px solid rgba(22, 163, 74, 0.25)',
-                                fontWeight: 700,
-                                fontSize: '13px',
-                                textDecoration: 'none',
-                                boxSizing: 'border-box',
-                              }}
-                            >
-                              <span>✓ Enrolled • Go to Lessons</span>
-                            </Link>
-                          ) : (
-                            <button
-                              onClick={() => handleEnroll(course)}
-                              disabled={isEnrolling}
-                              style={{
-                                width: '100%',
-                                padding: '10px',
-                                borderRadius: '8px',
-                                backgroundColor: 'var(--primary)',
                                 color: '#FFFFFF',
-                                fontWeight: 700,
-                                fontSize: '13px',
-                                cursor: isEnrolling ? 'not-allowed' : 'pointer',
-                                opacity: isEnrolling ? 0.7 : 1,
-                                border: 'none',
-                                boxShadow: '0 2px 6px rgba(242, 102, 42, 0.3)',
-                              }}
-                            >
-                              {isEnrolling ? 'Enrolling...' : '⚡ Enroll in Course (Free)'}
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Lesson Management & Syllabus Accordion */}
-                      <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <button
-                            onClick={() => setExpandedCourseId(isExpanded ? null : course.documentId)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--primary)',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              padding: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <span>{isExpanded ? 'Hide Syllabus' : `View Syllabus (${lessonsCount} Lessons)`}</span>
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              style={{
-                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                transition: 'transform 0.15s ease',
-                              }}
-                            >
-                              <path d="m6 9 6 6 6-6" />
-                            </svg>
-                          </button>
-
-                          {isManaged && (
-                            <button
-                              onClick={() => handleOpenAddLesson(course)}
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                backgroundColor: 'var(--primary-soft)',
-                                color: 'var(--primary)',
-                                fontSize: '11.5px',
-                                fontWeight: 700,
                                 cursor: 'pointer',
-                                border: 'none',
                               }}
                             >
-                              + Add Lesson
+                              Delete
                             </button>
-                          )}
-                        </div>
-
-                        {/* Expanded Lessons List */}
-                        {isExpanded && (
-                          <div
-                            style={{
-                              marginTop: '10px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '6px',
-                              backgroundColor: 'var(--canvas)',
-                              borderRadius: '10px',
-                              padding: '10px',
-                            }}
-                          >
-                            {lessonsCount === 0 ? (
-                              <div style={{ fontSize: '12px', color: 'var(--ink-faint)', textAlign: 'center', padding: '12px' }}>
-                                No lessons added yet.
-                              </div>
-                            ) : (
-                              course.lessons
-                                ?.sort((a, b) => (a.order || 0) - (b.order || 0))
-                                .map((lesson, idx) => (
-                                  <div
-                                    key={lesson.documentId || idx}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      padding: '8px 10px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--surface)',
-                                      border: '1px solid var(--border-soft)',
-                                    }}
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                      <span
-                                        style={{
-                                          width: '20px',
-                                          height: '20px',
-                                          borderRadius: '4px',
-                                          backgroundColor: 'var(--border-soft)',
-                                          color: 'var(--ink)',
-                                          fontSize: '11px',
-                                          fontWeight: 700,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        {lesson.order || idx + 1}
-                                      </span>
-                                      <span
-                                        style={{
-                                          fontSize: '12.5px',
-                                          fontWeight: 600,
-                                          color: 'var(--ink)',
-                                          whiteSpace: 'nowrap',
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                        }}
-                                      >
-                                        {lesson.title}
-                                      </span>
-                                      {lesson.video_url && (
-                                        <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
-                                          📹
-                                        </span>
-                                      )}
-                                    </div>
-
-                                    {isManaged && (
-                                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                        <button
-                                          onClick={() => handleOpenEditLesson(course, lesson)}
-                                          title="Edit Lesson"
-                                          style={{
-                                            padding: '3px 6px',
-                                            borderRadius: '4px',
-                                            background: 'none',
-                                            border: 'none',
-                                            color: 'var(--ink-soft)',
-                                            cursor: 'pointer',
-                                          }}
-                                        >
-                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M12 20h9" />
-                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                                          </svg>
-                                        </button>
-                                        <button
-                                          onClick={() => handleDeleteLessonClick(lesson)}
-                                          title="Delete Lesson"
-                                          style={{
-                                            padding: '3px 6px',
-                                            borderRadius: '4px',
-                                            background: 'none',
-                                            border: 'none',
-                                            color: 'var(--danger)',
-                                            cursor: 'pointer',
-                                          }}
-                                        >
-                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="3 6 5 6 21 6" />
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))
-                            )}
-
-                            {/* Course Assessment Quizzes */}
-                            {course.quizzes && course.quizzes.length > 0 && (
-                              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border)' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)', marginBottom: '6px' }}>
-                                  Course Assessment Quiz:
-                                </div>
-                                {course.quizzes.map((q) => (
-                                  <Link
-                                    key={q.documentId || q.id}
-                                    href={`/courses/${course.documentId}/quiz/${q.documentId}`}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      padding: '8px 10px',
-                                      borderRadius: '6px',
-                                      backgroundColor: 'var(--warning-soft)',
-                                      color: 'var(--warning)',
-                                      border: '1px solid rgba(245, 158, 11, 0.25)',
-                                      textDecoration: 'none',
-                                      fontSize: '12px',
-                                      fontWeight: 700,
-                                    }}
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                      <span>📝</span>
-                                      <span>{q.title}</span>
-                                    </div>
-                                    <span style={{ fontSize: '11px', opacity: 0.9 }}>Pass: {q.passing_score}% →</span>
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>
+
+                      <Link
+                        href={`/courses/${course.documentId}`}
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <h3
+                          style={{
+                            fontSize: '16px',
+                            fontWeight: 800,
+                            color: '#FFFFFF',
+                            margin: 0,
+                            textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)',
+                            lineHeight: 1.3,
+                          }}
+                        >
+                          {course.title}
+                        </h3>
+                      </Link>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* Card Body */}
+                  <div style={{ padding: '18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Description */}
+                    <p
+                      style={{
+                        fontSize: '13px',
+                        color: 'var(--ink-soft)',
+                        margin: 0,
+                        lineHeight: 1.5,
+                        flex: 1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {course.description || 'Master key concepts with structured lessons and interactive assessments.'}
+                    </p>
+
+                    {/* Student Progress Bar (Displayed only for enrolled students) */}
+                    {role === 'student' && isEnrolled && (() => {
+                      const studentPercent = progressMap[course.documentId] ?? progressMap[String(course.id)] ?? 0;
+                      return (
+                        <div
+                          style={{
+                            backgroundColor: 'var(--canvas)',
+                            borderRadius: '9px',
+                            padding: '8px 12px',
+                            border: '1px solid var(--border-soft)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '5px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', fontWeight: 700 }}>
+                            <span style={{ color: 'var(--ink-soft)' }}>Your Progress</span>
+                            <span style={{ color: studentPercent === 100 ? 'var(--success)' : 'var(--primary)', fontWeight: 800 }}>
+                              {studentPercent}%
+                            </span>
+                          </div>
+                          <div style={{ height: '5px', backgroundColor: 'var(--border-soft)', borderRadius: '99px', overflow: 'hidden' }}>
+                            <div
+                              style={{
+                                height: '100%',
+                                width: `${studentPercent}%`,
+                                backgroundColor: studentPercent === 100 ? 'var(--success)' : 'var(--primary)',
+                                borderRadius: '99px',
+                                transition: 'width 0.4s ease',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Metric Counts Bar: Lessons, Quizzes, Students - No Instructor Name */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        borderTop: '1px solid var(--border-soft)',
+                        paddingTop: '12px',
+                        fontSize: '12px',
+                        color: 'var(--ink-soft)',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <strong style={{ color: 'var(--primary)', fontWeight: 800 }}>{lessonsCount}</strong> {lessonsCount === 1 ? 'Lesson' : 'Lessons'}
+                      </span>
+                      <span style={{ color: 'var(--border)' }}>•</span>
+                      <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <strong style={{ color: 'var(--role-instructor)', fontWeight: 800 }}>{quizzesCount}</strong> {quizzesCount === 1 ? 'Quiz' : 'Quizzes'}
+                      </span>
+                      {enrollmentCount > 0 && (
+                        <>
+                          <span style={{ color: 'var(--border)' }}>•</span>
+                          <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <strong style={{ color: '#16A34A', fontWeight: 800 }}>{enrollmentCount}</strong> Enrolled
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* CTA Action Button */}
+                    <div style={{ marginTop: 'auto' }}>
+                      {role === 'student' && isEnrolled ? (
+                        <Link
+                          href={`/courses/${course.documentId}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            width: '100%',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--success-soft)',
+                            color: 'var(--success)',
+                            border: '1px solid rgba(22, 163, 74, 0.25)',
+                            fontWeight: 700,
+                            fontSize: '13px',
+                            textDecoration: 'none',
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          <span>Continue Learning →</span>
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/courses/${course.documentId}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            width: '100%',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            backgroundColor: role === 'student' || !user ? 'var(--primary)' : 'var(--canvas)',
+                            color: role === 'student' || !user ? '#FFFFFF' : 'var(--ink)',
+                            border: role === 'student' || !user ? 'none' : '1px solid var(--border)',
+                            fontWeight: 700,
+                            fontSize: '13px',
+                            textDecoration: 'none',
+                            boxSizing: 'border-box',
+                            boxShadow: role === 'student' || !user ? '0 2px 6px rgba(242, 102, 42, 0.25)' : 'none',
+                          }}
+                        >
+                          <span>
+                            {role === 'student' || !user
+                              ? 'View Details and Enroll →'
+                              : canManageCourse(course)
+                              ? 'Manage Course →'
+                              : 'View Details →'}
+                          </span>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}            </div>
           )}
 
           {/* Load More Button */}
@@ -826,6 +682,18 @@ export default function CoursesPage() {
             targetCourse={activeCourseForLesson}
             lessonToEdit={lessonToEdit}
             defaultOrder={(activeCourseForLesson.lessons?.length || 0) + 1}
+          />
+        )}
+
+        {/* Quiz Modal */}
+        {activeCourseForQuiz && (
+          <QuizModal
+            isOpen={isQuizModalOpen}
+            onClose={() => setIsQuizModalOpen(false)}
+            onSuccess={loadData}
+            courseDocumentId={activeCourseForQuiz.documentId}
+            courseTitle={activeCourseForQuiz.title}
+            quiz={quizToEdit}
           />
         )}
 

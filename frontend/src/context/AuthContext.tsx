@@ -113,12 +113,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, [logout]);
 
+  const getRoleLandingRoute = (roleType?: string) => {
+    if (roleType === 'admin') return '/dashboard';
+    if (roleType === 'instructor') return '/instructor/courses';
+    if (roleType === 'content_manager') return '/courses';
+    return '/my-courses';
+  };
+
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
     try {
       const data = await authApi.login(credentials);
       handleAuthSuccess(data);
-      router.push('/dashboard');
+      const targetRoute = getRoleLandingRoute(data.user.role_type);
+      router.push(targetRoute);
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await authApi.register(credentials);
       handleAuthSuccess(data);
-      router.push('/dashboard');
+      const targetRoute = getRoleLandingRoute(data.user.role_type);
+      router.push(targetRoute);
     } finally {
       setIsLoading(false);
     }

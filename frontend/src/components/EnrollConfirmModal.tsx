@@ -2,23 +2,27 @@
 
 import React, { useState } from 'react';
 
-interface PublishConfirmModalProps {
+interface EnrollConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
-  title: string;
-  articleTitle: string;
-  isPublishing: boolean; // true = publish, false = unpublish (draft)
+  courseTitle: string;
+  courseCategory?: string;
+  lessonCount?: number;
+  quizCount?: number;
+  actionContext?: 'course' | 'quiz';
 }
 
-export default function PublishConfirmModal({
+export default function EnrollConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title,
-  articleTitle,
-  isPublishing,
-}: PublishConfirmModalProps) {
+  courseTitle,
+  courseCategory,
+  lessonCount,
+  quizCount,
+  actionContext = 'course',
+}: EnrollConfirmModalProps) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -31,14 +35,11 @@ export default function PublishConfirmModal({
       await onConfirm();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err?.message || `Failed to ${isPublishing ? 'publish' : 'unpublish'} article.`);
+      setErrorMsg(err?.message || 'Failed to enroll.');
     } finally {
       setLoading(false);
     }
   };
-
-  const accentColor = isPublishing ? 'var(--success)' : 'var(--warning)';
-  const accentBg = isPublishing ? 'var(--success-soft)' : 'var(--warning-soft)';
 
   return (
     <div
@@ -80,7 +81,7 @@ export default function PublishConfirmModal({
             left: 0,
             right: 0,
             height: '4px',
-            backgroundColor: accentColor,
+            backgroundColor: 'var(--primary)',
           }}
         />
 
@@ -90,63 +91,68 @@ export default function PublishConfirmModal({
             width: '48px',
             height: '48px',
             borderRadius: '14px',
-            backgroundColor: accentBg,
-            color: accentColor,
+            backgroundColor: 'rgba(242, 102, 42, 0.1)',
+            color: 'var(--primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: '18px',
           }}
         >
-          {isPublishing ? (
-            /* Publish / Live Icon */
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-          ) : (
-            /* Unpublish / Draft Lock Icon */
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          )}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          </svg>
         </div>
 
         {/* Modal Title */}
         <h3 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px', fontFamily: 'var(--font-display)' }}>
-          {title}
+          {actionContext === 'quiz' ? 'Unlock Quiz Assessment' : 'Confirm Enrollment'}
         </h3>
 
-        {/* Target Article Highlight Pill */}
+        {/* Course Target Card */}
         <div
           style={{
             backgroundColor: 'var(--canvas)',
             border: '1px solid var(--border)',
-            borderRadius: '10px',
-            padding: '10px 14px',
+            borderRadius: '12px',
+            padding: '14px',
             margin: '12px 0 16px',
-            fontSize: '13px',
-            fontWeight: 700,
-            color: 'var(--ink)',
-            lineHeight: 1.4,
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
+            flexDirection: 'column',
+            gap: '6px',
           }}
         >
-          <span style={{ fontSize: '15px' }}></span>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {articleTitle}
-          </span>
+          {courseCategory && (
+            <span
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 700,
+                color: 'var(--primary)',
+                textTransform: 'none',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {courseCategory}
+            </span>
+          )}
+          <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ink)', lineHeight: 1.3 }}>
+            {courseTitle}
+          </div>
+          {(lessonCount !== undefined || quizCount !== undefined) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--ink-faint)', marginTop: '2px' }}>
+              {lessonCount !== undefined && <span>{lessonCount} Lessons</span>}
+              {lessonCount !== undefined && quizCount !== undefined && <span>•</span>}
+              {quizCount !== undefined && <span>{quizCount} Quizzes</span>}
+            </div>
+          )}
         </div>
 
         {/* Explanatory Message */}
-        <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: '0 0 24px', lineHeight: 1.55 }}>
-          {isPublishing
-            ? 'Publishing this article will make it instantly accessible to all students, readers, and public visitors across the platform.'
-            : 'Unpublishing this article will move it into Draft Mode. It will no longer be visible to students or the public until republished.'}
+        <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: '0 0 20px', lineHeight: 1.5 }}>
+          {actionContext === 'quiz'
+            ? 'Enrolling in this course grants you immediate access to its full curriculum, interactive MCQ assessments, and instant server auto-grading.'
+            : 'Enrolling will add this to your learning track, unlock all video lectures, and track your completion progress in real-time.'}
         </p>
 
         {/* Error Alert */}
@@ -160,7 +166,7 @@ export default function PublishConfirmModal({
               padding: '10px 12px',
               fontSize: '12.5px',
               fontWeight: 600,
-              marginBottom: '18px',
+              marginBottom: '16px',
             }}
           >
             {errorMsg}
@@ -195,34 +201,20 @@ export default function PublishConfirmModal({
             style={{
               padding: '10px 22px',
               borderRadius: '9px',
-              backgroundColor: accentColor,
+              backgroundColor: 'var(--primary)',
               color: '#FFFFFF',
               fontWeight: 700,
               fontSize: '13px',
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: isPublishing
-                ? '0 2px 10px rgba(16, 185, 129, 0.3)'
-                : '0 2px 10px rgba(245, 158, 11, 0.3)',
+              boxShadow: '0 2px 10px rgba(242, 102, 42, 0.3)',
               opacity: loading ? 0.7 : 1,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
             }}
           >
-            {loading ? (
-              <span>Processing...</span>
-            ) : isPublishing ? (
-              <>
-                <span>Publish Now</span>
-                <span>→</span>
-              </>
-            ) : (
-              <>
-                <span>Move to Drafts</span>
-                <span></span>
-              </>
-            )}
+            {loading ? 'Enrolling...' : 'Confirm Enrollment →'}
           </button>
         </div>
       </div>

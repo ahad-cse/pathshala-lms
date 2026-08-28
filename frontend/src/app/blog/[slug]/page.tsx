@@ -248,7 +248,7 @@ export default function SingleBlogPage() {
               border: '1px solid var(--border)',
             }}
           >
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>🔒</div>
+            <div style={{ fontSize: '40px', marginBottom: '12px' }}></div>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px' }}>
               Article Not Accessible
             </h3>

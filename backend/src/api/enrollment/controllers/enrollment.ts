@@ -47,6 +47,20 @@ export default factories.createCoreController('api::enrollment.enrollment', ({ s
       };
     }
 
+    // If Instructor, strictly scope to enrollments for own authored courses
+    if (user.role_type === 'instructor') {
+      ctx.query.filters = {
+        ...(typeof ctx.query.filters === 'object' ? ctx.query.filters : {}),
+        course: {
+          instructor: {
+            id: {
+              $eq: user.id,
+            },
+          },
+        },
+      };
+    }
+
     return super.find(ctx);
   },
 

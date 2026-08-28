@@ -1,604 +1,546 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useAuth, ROLE_DETAILS } from '@/context/AuthContext';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AppShell from '@/components/AppShell';
-import { enrollmentApi, progressApi, courseApi, blogApi, adminApi, quizSubmissionApi } from '@/lib/api';
-import { Enrollment } from '@/types/content';
+import { useAuth } from '@/context/AuthContext';
+import { adminApi } from '@/lib/api';
+import RoleChangeConfirmModal from '@/components/RoleChangeConfirmModal';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import { AdminStats, AdminUser } from '@/types/content';
 import Link from 'next/link';
 
-export default function DashboardPage() {
-  const { user, role } = useAuth();
-  const currentRole = role || 'student';
-  const roleConfig = ROLE_DETAILS[currentRole] || ROLE_DETAILS.student;
+const ROLE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  admin: { bg: 'var(--role-admin-soft)', text: 'var(--role-admin)', label: 'Admin' },
+  content_manager: { bg: 'var(--role-content-soft)', text: 'var(--role-content)', label: 'Content Manager' },
+  instructor: { bg: 'var(--role-instructor-soft)', text: 'var(--role-instructor)', label: 'Instructor' },
+  student: { bg: 'var(--role-student-soft)', text: 'var(--role-student)', label: 'Student' },
+};
 
+export default function DashboardPage() {
+  const { user, role, isLoading } = useAuth();
+  const router = useRouter();
+
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [studentStats, setStudentStats] = useState({
-    enrolledCount: 0,
-    inProgressCount: 0,
-    completedLessons: 0,
-    passedQuizzes: 0,
-    avgScore: 0,
-  });
-  const [instructorStats, setInstructorStats] = useState({
-    courseCount: 0,
-    lessonCount: 0,
-    studentCount: 0,
-  });
-  const [cmStats, setCmStats] = useState({
-    courseCount: 0,
-    blogCount: 0,
-    draftCount: 0,
-  });
-  const [adminStats, setAdminStats] = useState({
-    totalUsers: 5,
-    totalCourses: 0,
-    totalEnrollments: 0,
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [updatingUserId, setUpdatingUserId] = useState<number | string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{ user: AdminUser; newRole: string } | null>(null);
+  const [pendingDeleteUser, setPendingDeleteUser] = useState<AdminUser | null>(null);
+
+  // Auto-redirect non-admin roles to their respective primary workspace
+  useEffect(() => {
+    if (isLoading) return;
+    if (role === 'instructor') {
+      router.replace('/instructor/courses');
+    } else if (role === 'content_manager') {
+      router.replace('/courses');
+    } else if (role === 'student') {
+      router.replace('/my-courses');
+    }
+  }, [role, isLoading, router]);
+
+  const loadAdminData = useCallback(async () => {
+    if (role !== 'admin') return;
+    try {
+      setLoading(true);
+      const [statsRes, usersRes] = await Promise.all([
+        adminApi.getStats(),
+        adminApi.getUsers(),
+      ]);
+
+      setStats(statsRes.data);
+      setUsers(usersRes.data || []);
+    } catch (err) {
+      console.error('Failed to load admin dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [role]);
 
   useEffect(() => {
-    async function loadDynamicDashboard() {
-      setLoading(true);
-      try {
-        if (currentRole === 'student') {
-          const [enrollRes, subRes] = await Promise.allSettled([
-            enrollmentApi.getMyEnrollments(),
-            quizSubmissionApi.getMySubmissions(),
-          ]);
+    if (role === 'admin') {
+      loadAdminData();
+    }
+  }, [role, loadAdminData]);
 
-          const enrollments: Enrollment[] = enrollRes.status === 'fulfilled' ? enrollRes.value.data || [] : [];
-          let totalCompletedLessons = 0;
-          let inProgress = 0;
+  if (isLoading || (role && role !== 'admin')) {
+    return (
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', color: 'var(--ink-soft)' }}>
+          Redirecting to your workspace...
+        </div>
+      </AppShell>
+    );
+  }
 
-          // Fetch real-time progress for enrolled courses
-          const progressPromises = enrollments.map(async (e) => {
-            if (!e.course?.documentId) return null;
-            try {
-              const p = await progressApi.getCourseProgress(e.course.documentId);
-              return p.data;
-            } catch {
-              return null;
-            }
-          });
-
-          const progresses = await Promise.all(progressPromises);
-          progresses.forEach((p) => {
-            if (p) {
-              totalCompletedLessons += p.completedLessons || 0;
-              if (p.percentage > 0 && p.percentage < 100) inProgress += 1;
-            }
-          });
-
-          const submissions = subRes.status === 'fulfilled' ? subRes.value.data || [] : [];
-          const passedCount = submissions.filter((s) => s.passed).length;
-          const avg = submissions.length > 0
-            ? Math.round(submissions.reduce((acc, s) => acc + s.score, 0) / submissions.length)
-            : 85;
-
-          setStudentStats({
-            enrolledCount: enrollments.length,
-            inProgressCount: inProgress || (enrollments.length > 0 ? 1 : 0),
-            completedLessons: totalCompletedLessons || (enrollments.length > 0 ? 2 : 0),
-            passedQuizzes: passedCount,
-            avgScore: avg,
-          });
-        } else if (currentRole === 'instructor') {
-          const coursesRes = await courseApi.getAll();
-          const allCourses = coursesRes.data || [];
-          const myCourses = allCourses.filter((c) => c.instructor?.id === user?.id || c.instructor?.documentId === user?.documentId);
-          const totalLessons = myCourses.reduce((acc, c) => acc + (c.lessons?.length || 0), 0);
-
-          setInstructorStats({
-            courseCount: myCourses.length || 1,
-            lessonCount: totalLessons || 3,
-            studentCount: (myCourses.length || 1) * 4,
-          });
-        } else if (currentRole === 'content_manager') {
-          const [cRes, bRes] = await Promise.allSettled([
-            courseApi.getAll(),
-            blogApi.getAll(),
-          ]);
-
-          const courses = cRes.status === 'fulfilled' ? cRes.value.data || [] : [];
-          const blogs = bRes.status === 'fulfilled' ? bRes.value.data || [] : [];
-          const drafts = blogs.filter((b) => !b.is_published).length;
-
-          setCmStats({
-            courseCount: courses.length,
-            blogCount: blogs.length,
-            draftCount: drafts,
-          });
-        } else if (currentRole === 'admin') {
-          try {
-            const res = await adminApi.getStats();
-            if (res.data) {
-              setAdminStats({
-                totalUsers: res.data.totalUsers || 5,
-                totalCourses: res.data.totalCourses || 10,
-                totalEnrollments: res.data.totalEnrollments || 4,
-              });
-            }
-          } catch {
-            const coursesRes = await courseApi.getAll();
-            setAdminStats({
-              totalUsers: 5,
-              totalCourses: coursesRes.data?.length || 10,
-              totalEnrollments: 4,
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Error loading dashboard stats:', err);
-      } finally {
-        setLoading(false);
-      }
+  const handleRoleSelect = (targetUser: AdminUser, newRole: string) => {
+    if (targetUser.role_type === newRole) return;
+    if (targetUser.id === user?.id && newRole !== 'admin') {
+      setToastMessage('Action Blocked: You cannot demote your own active admin account.');
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
     }
 
-    loadDynamicDashboard();
-  }, [currentRole, user]);
+    setPendingRoleChange({ user: targetUser, newRole });
+  };
+
+  const handleConfirmRoleChange = async (targetUser: AdminUser, newRole: string) => {
+    setUpdatingUserId(targetUser.id);
+    try {
+      await adminApi.updateUserRole(targetUser.id, newRole);
+      setToastMessage(`Updated role for ${targetUser.username} to ${ROLE_COLORS[newRole]?.label}!`);
+      setTimeout(() => setToastMessage(null), 3500);
+      loadAdminData();
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeleteClick = (targetUser: AdminUser) => {
+    if (targetUser.id === user?.id) {
+      setToastMessage('Action Blocked: You cannot delete your own active admin account.');
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+    setPendingDeleteUser(targetUser);
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    if (!pendingDeleteUser) return;
+    await adminApi.deleteUser(pendingDeleteUser.id);
+    setToastMessage(`Deleted user ${pendingDeleteUser.username}.`);
+    setTimeout(() => setToastMessage(null), 3500);
+    loadAdminData();
+  };
+
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch =
+      u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === 'all' || u.role_type === roleFilter;
+    return matchesSearch && matchesRole;
+  });
 
   return (
-    <ProtectedRoute>
-      <AppShell
-        title={`${roleConfig.label} Dashboard`}
-        subtitle={`Signed in as ${user?.email} (${roleConfig.label})`}
-      >
+    <ProtectedRoute allowedRoles={['admin']}>
+      <AppShell>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Hero Role Banner */}
-          <div
-            style={{
-              backgroundColor: 'var(--surface)',
-              borderRadius: '16px',
-              border: '1px solid var(--border)',
-              padding: '24px 28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Top decorative role accent bar */}
+          {/* Toast Notification */}
+          {toastMessage && (
             <div
+              className="animate-fade-in-up"
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                backgroundColor: roleConfig.color,
+                padding: '12px 18px',
+                borderRadius: '10px',
+                backgroundColor: 'var(--ink)',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
               }}
-            />
+            >
+              <span>{toastMessage}</span>
+              <button
+                onClick={() => setToastMessage(null)}
+                style={{ background: 'none', border: 'none', color: '#FFFFFF', cursor: 'pointer', opacity: 0.8 }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
+          {/* Admin Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
             <div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '2px 8px',
-                  borderRadius: '99px',
-                  backgroundColor: roleConfig.softColor,
-                  color: roleConfig.color,
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  letterSpacing: '0.04em',
-                  marginBottom: '10px',
-                }}
-              >
-                <span
-                  style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: roleConfig.color,
-                  }}
-                />
-                {roleConfig.label} Workspace
-              </div>
-
-              <h2
-                style={{
-                  fontSize: '24px',
-                  fontWeight: 800,
-                  color: 'var(--ink)',
-                  margin: '0 0 6px',
-                  fontFamily: 'var(--font-display)',
-                }}
-              >
-                Welcome back, {user?.username}!
-              </h2>
-              <p style={{ fontSize: '13.5px', color: 'var(--ink-soft)', margin: 0, maxWidth: '600px' }}>
-                {roleConfig.description}. Manage your learning, authoring, and platform resources from this unified portal.
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
+                Admin Dashboard
+              </h1>
+              <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: '4px 0 0' }}>
+                Global platform metrics, user directory, and role-based access governance.
               </p>
             </div>
 
-            {/* Quick Action Button per Role */}
-            <div>
-              {currentRole === 'student' && (
-                <Link
-                  href="/courses"
-                  className="btn-interactive"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '11px 20px',
-                    borderRadius: '9px',
-                    backgroundColor: 'var(--primary)',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '13.5px',
-                    textDecoration: 'none',
-                    boxShadow: '0 2px 8px rgba(242, 102, 42, 0.3)',
-                  }}
-                >
-                  Courses →
-                </Link>
-              )}
-
-              {currentRole === 'instructor' && (
-                <Link
-                  href="/instructor/courses"
-                  className="btn-interactive"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '11px 20px',
-                    borderRadius: '9px',
-                    backgroundColor: 'var(--role-instructor)',
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '13.5px',
-                    textDecoration: 'none',
-                    boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
-                  }}
-                >
-                  Create New Course +
-                </Link>
-              )}
-
-              {(currentRole === 'admin' || currentRole === 'content_manager') && (
-                <Link
-                  href={currentRole === 'admin' ? '/admin' : '/courses'}
-                  className="btn-interactive"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '11px 20px',
-                    borderRadius: '9px',
-                    backgroundColor: roleConfig.color,
-                    color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: '13.5px',
-                    textDecoration: 'none',
-                    boxShadow: `0 2px 8px ${roleConfig.color}44`,
-                  }}
-                >
-                  {currentRole === 'admin' ? 'Open Admin Panel →' : 'Manage Course Catalog →'}
-                </Link>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Link
+                href="/courses"
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--canvas)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--ink)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                Manage Courses
+              </Link>
+              <Link
+                href="/blog"
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--primary)',
+                  color: '#FFFFFF',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Blog Management
+              </Link>
             </div>
           </div>
 
-          {/* Role-Specific Metric Cards (100% Dynamic & Aligned with Specification) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px' }}>
-            {currentRole === 'student' && (
-              <>
-                {/* Metric 1: Enrolled Courses */}
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Enrolled Courses
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    {studentStats.enrolledCount}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--success)', marginTop: '4px', fontWeight: 600 }}>
-                    ● {studentStats.inProgressCount} Active in Track
-                  </div>
-                </div>
+          {/* Platform Metric KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+            {/* Total Users */}
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '20px',
+                borderRadius: '14px',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginBottom: '6px' }}>
+                Total Platform Users
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-admin)' }}>
+                {stats?.totalUsers ?? '...'}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--ink-soft)', marginTop: '4px', lineHeight: 1.4 }}>
+                {stats?.usersByRole.student ?? 0} students • {stats?.usersByRole.instructor ?? 0} instructors • {stats?.usersByRole.content_manager ?? 0} content managers • {stats?.usersByRole.admin ?? 0} admin
+              </div>
+            </div>
 
-                {/* Metric 2: Completed Lessons */}
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Completed Lessons
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    {studentStats.completedLessons}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    Progress verified & persisted
-                  </div>
-                </div>
+            {/* Courses & Lessons */}
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '20px',
+                borderRadius: '14px',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginBottom: '6px' }}>
+                Total Published Courses
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>
+                {stats?.totalCourses ?? '...'}
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                {stats?.totalLessons ?? 0} total curriculum lessons
+              </div>
+            </div>
 
-                {/* Metric 3: Quizzes & Assessment Performance */}
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Quizzes Completed
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-display)' }}>
-                    {studentStats.passedQuizzes > 0 ? `${studentStats.passedQuizzes} Passed` : 'Ready'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    Auto-graded server evaluation
-                  </div>
-                </div>
-              </>
-            )}
+            {/* Enrollments */}
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '20px',
+                borderRadius: '14px',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginBottom: '6px' }}>
+                Total Enrollments
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-student)' }}>
+                {stats?.totalEnrollments ?? '...'}
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                Active learner registrations
+              </div>
+            </div>
 
-            {currentRole === 'instructor' && (
-              <>
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    My Created Courses
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-instructor)', fontFamily: 'var(--font-display)' }}>
-                    {instructorStats.courseCount}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    Owned course tracks
-                  </div>
-                </div>
-
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Total Lessons Authored
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    {instructorStats.lessonCount}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--success)', marginTop: '4px', fontWeight: 600 }}>
-                    All published & active
-                  </div>
-                </div>
-
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Active Students
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    {instructorStats.studentCount}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    Across owned courses
-                  </div>
-                </div>
-              </>
-            )}
-
-            {currentRole === 'content_manager' && (
-              <>
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Platform Courses
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-content)', fontFamily: 'var(--font-display)' }}>
-                    {cmStats.courseCount}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    Global catalog editing enabled
-                  </div>
-                </div>
-
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Blog Publications
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    {cmStats.blogCount}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--success)', marginTop: '4px', fontWeight: 600 }}>
-                    {cmStats.draftCount} draft articles pending
-                  </div>
-                </div>
-
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Editorial Control
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    Active
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    All curriculum up to date
-                  </div>
-                </div>
-              </>
-            )}
-
-            {currentRole === 'admin' && (
-              <>
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Total Registered Users
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-admin)', fontFamily: 'var(--font-display)' }}>
-                    {adminStats.totalUsers}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)', marginTop: '4px' }}>
-                    Across 4 distinct role tiers
-                  </div>
-                </div>
-
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Platform Courses
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>
-                    {adminStats.totalCourses}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--success)', marginTop: '4px', fontWeight: 600 }}>
-                    {adminStats.totalEnrollments} total enrollments
-                  </div>
-                </div>
-
-                <div className="interactive-card animate-fade-in-up" style={{ backgroundColor: 'var(--surface)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'none', marginBottom: '8px' }}>
-                    Backend Security
-                  </div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--success)', fontFamily: 'var(--font-display)' }}>
-                    100%
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--success)', marginTop: '4px', fontWeight: 600 }}>
-                    RBAC policies strictly enforced
-                  </div>
-                </div>
-              </>
-            )}
+            {/* Quizzes & Submissions */}
+            <div
+              style={{
+                backgroundColor: 'var(--surface)',
+                padding: '20px',
+                borderRadius: '14px',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-faint)', marginBottom: '6px' }}>
+                Quizzes & Evaluations
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--role-instructor)' }}>
+                {stats?.totalQuizzes ?? '...'}
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--ink-soft)', marginTop: '4px' }}>
+                {stats?.totalSubmissions ?? 0} evaluated submissions
+              </div>
+            </div>
           </div>
 
-          {/* Quick Access Portal Grid */}
+          {/* User Management & Role Directory */}
           <div
             style={{
               backgroundColor: 'var(--surface)',
               borderRadius: '16px',
               border: '1px solid var(--border)',
-              padding: '24px',
+              overflow: 'hidden',
             }}
           >
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', marginBottom: '16px' }}>
-              Quick Navigation Portal
-            </h3>
+            {/* Header & Controls */}
+            <div
+              style={{
+                padding: '20px 24px',
+                borderBottom: '1px solid var(--border-soft)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '14px',
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+                  User Management & Role Directory
+                </h3>
+                <p style={{ fontSize: '12.5px', color: 'var(--ink-soft)', margin: '2px 0 0' }}>
+                  Assign, promote, or demote platform roles in real-time.
+                </p>
+              </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-              <Link
-                href="/courses"
-                className="interactive-card"
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  backgroundColor: 'var(--canvas)',
-                  border: '1px solid var(--border-soft)',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  transition: 'border-color 0.15s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
-              >
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                  📚 Courses
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                  Explore web development & computer science courses
-                </div>
-              </Link>
-
-              {currentRole === 'student' && (
-                <Link
-                  href="/my-courses"
+              {/* Search & Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="Search user or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    padding: '16px',
-                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
                     backgroundColor: 'var(--canvas)',
-                    border: '1px solid var(--border-soft)',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    transition: 'border-color 0.15s ease',
+                    fontSize: '12.5px',
+                    color: 'var(--ink)',
+                    outline: 'none',
+                    minWidth: '200px',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--role-student)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
-                >
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                    🎓 My Enrolled Courses
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                    Resume lessons & view tracking percentages
-                  </div>
-                </Link>
-              )}
+                />
 
-              {currentRole === 'instructor' && (
-                <Link
-                  href="/instructor/courses"
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
                   style={{
-                    padding: '16px',
-                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
                     backgroundColor: 'var(--canvas)',
-                    border: '1px solid var(--border-soft)',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    transition: 'border-color 0.15s ease',
+                    fontSize: '12.5px',
+                    color: 'var(--ink)',
+                    outline: 'none',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--role-instructor)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
                 >
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                    ✍️ Instructor Studio
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                    Author new lessons & manage your courses
-                  </div>
-                </Link>
-              )}
+                  <option value="all">All Roles ({users.length})</option>
+                  <option value="admin">Admins ({stats?.usersByRole.admin || 0})</option>
+                  <option value="content_manager">Content Managers ({stats?.usersByRole.content_manager || 0})</option>
+                  <option value="instructor">Instructors ({stats?.usersByRole.instructor || 0})</option>
+                  <option value="student">Students ({stats?.usersByRole.student || 0})</option>
+                </select>
+              </div>
+            </div>
 
-              {(currentRole === 'admin' || currentRole === 'content_manager') && (
-                <Link
-                  href="/blog"
-                  style={{
-                    padding: '16px',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--canvas)',
-                    border: '1px solid var(--border-soft)',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    transition: 'border-color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--role-content)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
-                >
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                    📰 Blog
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                    Publish educational articles & updates
-                  </div>
-                </Link>
-              )}
+            {/* Users Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ backgroundColor: 'var(--canvas)', borderBottom: '1px solid var(--border-soft)' }}>
+                    <th style={{ padding: '12px 24px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>
+                      USER IDENTITY
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>
+                      CURRENT ROLE
+                    </th>
+                    <th style={{ padding: '12px 18px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)' }}>
+                      CHANGE ROLE
+                    </th>
+                    <th style={{ padding: '12px 24px', fontSize: '11.5px', fontWeight: 700, color: 'var(--ink-faint)', textAlign: 'right' }}>
+                      ACTIONS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '13px' }}>
+                        Loading user directory...
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '13px' }}>
+                        No users found matching your search.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const isSelf = u.id === user?.id;
+                      const roleConfig = ROLE_COLORS[u.role_type] || ROLE_COLORS.student;
+                      const isUpdating = updatingUserId === u.id;
 
-              {currentRole === 'admin' && (
-                <Link
-                  href="/admin"
-                  style={{
-                    padding: '16px',
-                    borderRadius: '10px',
-                    backgroundColor: 'var(--canvas)',
-                    border: '1px solid var(--border-soft)',
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    transition: 'border-color 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--role-admin)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-soft)')}
-                >
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ink)' }}>
-                    🛡️ Admin Panel
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--ink-soft)' }}>
-                    Manage user roles & inspect platform metrics
-                  </div>
-                </Link>
-              )}
+                      return (
+                        <tr
+                          key={u.id}
+                          style={{
+                            borderBottom: '1px solid var(--border-soft)',
+                            backgroundColor: isSelf ? 'rgba(99, 102, 241, 0.03)' : 'transparent',
+                            transition: 'background-color 0.1s ease',
+                          }}
+                        >
+                          {/* User Identity */}
+                          <td style={{ padding: '14px 24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div
+                                style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '50%',
+                                  backgroundColor: roleConfig.bg,
+                                  color: roleConfig.text,
+                                  fontWeight: 800,
+                                  fontSize: '12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                {u.username.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>{u.username}</span>
+                                  {isSelf && (
+                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', backgroundColor: 'var(--role-admin-soft)', color: 'var(--role-admin)' }}>
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Current Role Badge */}
+                          <td style={{ padding: '14px 18px' }}>
+                            <span
+                              style={{
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                padding: '3px 10px',
+                                borderRadius: '99px',
+                                backgroundColor: roleConfig.bg,
+                                color: roleConfig.text,
+                                textTransform: 'none',
+                                letterSpacing: '0.03em',
+                              }}
+                            >
+                              {roleConfig.label}
+                            </span>
+                          </td>
+
+                          {/* Change Role Selector */}
+                          <td style={{ padding: '14px 18px' }}>
+                            {isSelf ? (
+                              <span
+                                style={{
+                                  fontSize: '12px',
+                                  fontWeight: 500,
+                                  color: 'var(--ink-faint)',
+                                }}
+                              >
+                                —
+                              </span>
+                            ) : (
+                              <select
+                                value={u.role_type}
+                                disabled={isUpdating}
+                                onChange={(e) => handleRoleSelect(u, e.target.value)}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  border: '1px solid var(--border)',
+                                  backgroundColor: 'var(--surface)',
+                                  fontSize: '12.5px',
+                                  fontWeight: 600,
+                                  color: 'var(--ink)',
+                                  cursor: 'pointer',
+                                  outline: 'none',
+                                }}
+                              >
+                                <option value="student">Student</option>
+                                <option value="instructor">Instructor</option>
+                                <option value="content_manager">Content Manager</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td style={{ padding: '14px 24px', textAlign: 'right' }}>
+                            {!isSelf ? (
+                              <button
+                                onClick={() => handleDeleteClick(u)}
+                                title="Delete user"
+                                style={{
+                                  padding: '5px 10px',
+                                  borderRadius: '6px',
+                                  backgroundColor: 'var(--danger-soft)',
+                                  border: '1px solid rgba(220, 38, 38, 0.2)',
+                                  color: 'var(--danger)',
+                                  fontSize: '11.5px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Delete
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '12px', color: 'var(--ink-faint)' }}>—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
+
+        {/* Role Change Confirmation Modal */}
+        <RoleChangeConfirmModal
+          isOpen={!!pendingRoleChange}
+          targetUser={pendingRoleChange?.user || null}
+          newRole={pendingRoleChange?.newRole || ''}
+          onClose={() => setPendingRoleChange(null)}
+          onConfirm={handleConfirmRoleChange}
+        />
+
+        {/* Delete User Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={!!pendingDeleteUser}
+          title={`Delete user account "${pendingDeleteUser?.username}"?`}
+          message="This action will permanently delete this user account. This action cannot be undone."
+          itemType="User Account"
+          onClose={() => setPendingDeleteUser(null)}
+          onConfirm={handleConfirmDeleteUser}
+        />
       </AppShell>
     </ProtectedRoute>
   );

@@ -102,7 +102,7 @@ export default function MyCoursesPage() {
                   marginBottom: '8px',
                 }}
               >
-                <span>🎓</span>
+                <span></span>
                 <span>Active Learning Tracks</span>
               </div>
               <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px' }}>
@@ -148,7 +148,7 @@ export default function MyCoursesPage() {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>📖</div>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}></div>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px' }}>
                 You haven't enrolled in any courses yet
               </h3>
@@ -273,7 +273,7 @@ export default function MyCoursesPage() {
                         {course.description}
                       </p>
 
-                      {/* Progress Bar Component */}
+                      {/* Clean Track Progress Component */}
                       <div
                         style={{
                           backgroundColor: 'var(--canvas)',
@@ -285,7 +285,7 @@ export default function MyCoursesPage() {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ink)' }}>
-                            Track Progress
+                            {completedCount} of {lessonsCount} lessons completed
                           </span>
                           <span style={{ fontSize: '12px', fontWeight: 800, color: percentage === 100 ? 'var(--success)' : 'var(--primary)' }}>
                             {percentage}%
@@ -303,25 +303,6 @@ export default function MyCoursesPage() {
                             }}
                           />
                         </div>
-                        <div style={{ fontSize: '11px', color: 'var(--ink-faint)', marginTop: '6px' }}>
-                          {completedCount} of {lessonsCount} lessons completed
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          borderTop: '1px solid var(--border-soft)',
-                          paddingTop: '12px',
-                          fontSize: '12px',
-                          color: 'var(--ink-faint)',
-                          marginBottom: '16px',
-                        }}
-                      >
-                        <span>Instructor: <strong style={{ color: 'var(--ink)' }}>{course.instructor?.username || 'Staff Author'}</strong></span>
-                        <span style={{ fontWeight: 600 }}>{lessonsCount} {lessonsCount === 1 ? 'Lesson' : 'Lessons'}</span>
                       </div>
 
                       {/* Action Button */}
@@ -344,7 +325,7 @@ export default function MyCoursesPage() {
                           boxShadow: percentage === 100 ? 'none' : '0 2px 6px rgba(242, 102, 42, 0.3)',
                         }}
                       >
-                        <span>{percentage === 100 ? '✓ Review Course Content' : percentage > 0 ? '▶ Continue Learning' : '▶ Start Learning'}</span>
+                        <span>{percentage === 100 ? '✓ Review Course Content' : percentage > 0 ? 'Continue Learning' : 'Start Learning'}</span>
                       </Link>
                     </div>
                   </div>

@@ -54,6 +54,11 @@
       "relation": "oneToMany",
       "target": "api::quiz.quiz",
       "mappedBy": "course"
+    },
+    "co_instructors": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user"
     }
   }
 }

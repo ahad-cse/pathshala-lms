@@ -11,7 +11,7 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
       ...ctx.query,
       populate: {
         course: {
-          populate: ['instructor'],
+          populate: ['instructor', 'co_instructors'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
@@ -25,7 +25,7 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
       ...ctx.query,
       populate: {
         course: {
-          populate: ['instructor'],
+          populate: ['instructor', 'co_instructors'],
         },
         ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
       },
@@ -77,25 +77,28 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
     const targetCourse = typeof courseInput === 'string'
       ? await strapi.documents('api::course.course').findOne({
           documentId: courseInput,
-          populate: ['instructor'],
+          populate: ['instructor', 'co_instructors'],
         })
       : await strapi.db.query('api::course.course').findOne({
           where: { id: courseInput },
-          populate: ['instructor'],
+          populate: ['instructor', 'co_instructors'],
         });
 
     if (!targetCourse) {
       return ctx.notFound('Course not found.');
     }
 
-    // Instructor ownership check
+    // Instructor ownership check (Lead or Co-Instructor)
     if (user.role_type === 'instructor') {
       const instrId = (targetCourse.instructor as any)?.id;
       const instrDocId = (targetCourse.instructor as any)?.documentId;
-      const isOwner = (instrId && instrId === user.id) || (instrDocId && instrDocId === user.documentId);
+      const isLeadOwner = (instrId && instrId === user.id) || (instrDocId && instrDocId === user.documentId);
+      const isCoInstructor = ((targetCourse as any)?.co_instructors as any[])?.some(
+        (ci) => ci.id === user.id || ci.documentId === user.documentId
+      );
 
-      if (!isOwner) {
-        return ctx.forbidden('Access denied: Instructors can only add quizzes to their own courses.');
+      if (!isLeadOwner && !isCoInstructor) {
+        return ctx.forbidden('Access denied: Instructors can only add quizzes to courses they are assigned to.');
       }
     }
 
@@ -129,11 +132,11 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
     const targetQuiz = typeof id === 'string'
       ? await strapi.documents('api::quiz.quiz').findOne({
           documentId: id,
-          populate: ['course.instructor'],
+          populate: ['course.instructor', 'course.co_instructors'],
         })
       : await strapi.db.query('api::quiz.quiz').findOne({
           where: { id },
-          populate: ['course.instructor'],
+          populate: ['course.instructor', 'course.co_instructors'],
         });
 
     if (!targetQuiz) {
@@ -189,12 +192,7 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
       return ctx.forbidden('Access denied: Only students are permitted to take and submit quizzes per the Permission Matrix.');
     }
 
-    const { answers } = ctx.request.body?.data || {};
-    if (!answers || typeof answers !== 'object') {
-      return ctx.badRequest('A valid answers map/object is required for quiz evaluation.');
-    }
-
-    // Retrieve authentic Quiz record from database
+    // Retrieve authentic Quiz record from database with parent course
     const quiz = typeof quizId === 'string'
       ? await strapi.documents('api::quiz.quiz').findOne({
           documentId: quizId,
@@ -208,6 +206,31 @@ export default factories.createCoreController('api::quiz.quiz', ({ strapi }) => 
     if (!quiz) {
       return ctx.notFound('Quiz not found.');
     }
+
+    // Verify that the student is actively enrolled in this course
+    const courseId = (quiz.course as any)?.id;
+    const courseDocId = (quiz.course as any)?.documentId;
+
+    const enrollment = await strapi.documents('api::enrollment.enrollment').findMany({
+      filters: {
+        student: { id: { $eq: user.id } },
+        $or: [
+          ...(courseId ? [{ course: { id: { $eq: courseId } } }] : []),
+          ...(courseDocId ? [{ course: { documentId: { $eq: courseDocId } } }] : []),
+        ],
+      },
+    });
+
+    if (!enrollment || enrollment.length === 0) {
+      return ctx.forbidden('Access denied: You must be actively enrolled in this course to take its assessment quizzes.');
+    }
+
+    const { answers } = ctx.request.body?.data || {};
+    if (!answers || typeof answers !== 'object') {
+      return ctx.badRequest('A valid answers map/object is required for quiz evaluation.');
+    }
+
+
 
     const questions: any[] = Array.isArray(quiz.questions) ? quiz.questions : [];
     const totalQuestions = questions.length;

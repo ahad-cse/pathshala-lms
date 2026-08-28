@@ -16,11 +16,11 @@ interface NavItemConfig {
 }
 
 const NAV_ITEMS: NavItemConfig[] = [
-  // Common across all authenticated roles
+  // 1. Admin Specific: Unified Dashboard
   {
     label: 'Dashboard',
     href: '/dashboard',
-    roles: ['admin', 'content_manager', 'instructor', 'student'],
+    roles: ['admin'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect width="7" height="9" x="3" y="3" rx="1" />
@@ -30,31 +30,7 @@ const NAV_ITEMS: NavItemConfig[] = [
       </svg>
     ),
   },
-  // Student Specific
-  {
-    label: 'Courses',
-    href: '/courses',
-    roles: ['student'],
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-        <path d="M6 6h10" />
-        <path d="M6 10h10" />
-      </svg>
-    ),
-  },
-  {
-    label: 'My Enrolled Courses',
-    href: '/my-courses',
-    roles: ['student'],
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c3 3 9 3 12 0v-5" />
-      </svg>
-    ),
-  },
-  // Instructor Specific
+  // 2. Instructor Specific: Course Studio
   {
     label: 'Course Studio',
     href: '/instructor/courses',
@@ -66,22 +42,23 @@ const NAV_ITEMS: NavItemConfig[] = [
       </svg>
     ),
   },
+  // 3. Student Specific: My Enrolled Courses
   {
-    label: 'MCQ Quiz Studio',
-    href: '/quizzes',
-    roles: ['admin', 'content_manager', 'instructor'],
+    label: 'My Enrolled Courses',
+    href: '/my-courses',
+    roles: ['student'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="m9 12 2 2 4-4" />
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
       </svg>
     ),
   },
-  // Content Manager & Admin
+  // 4. Courses (Catalog & Management)
   {
     label: 'Courses',
     href: '/courses',
-    roles: ['admin', 'content_manager'],
+    roles: ['admin', 'content_manager', 'instructor', 'student'],
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect width="18" height="18" x="3" y="3" rx="2" />
@@ -90,6 +67,7 @@ const NAV_ITEMS: NavItemConfig[] = [
       </svg>
     ),
   },
+  // 5. Blog (Admin & Content Manager)
   {
     label: 'Blog',
     href: '/blog',
@@ -100,18 +78,6 @@ const NAV_ITEMS: NavItemConfig[] = [
         <path d="M18 14h-8" />
         <path d="M15 18h-5" />
         <path d="M10 6h8v4h-8V6Z" />
-      </svg>
-    ),
-  },
-  // Admin Only
-  {
-    label: 'Admin Control Center',
-    href: '/admin',
-    roles: ['admin'],
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-        <path d="m9 12 2 2 4-4" />
       </svg>
     ),
   },

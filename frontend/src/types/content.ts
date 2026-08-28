@@ -76,6 +76,7 @@ export interface Course {
   cover_color: string;
   cover_image_url?: string;
   instructor?: User;
+  co_instructors?: User[];
   lessons?: Lesson[];
   enrollments?: Enrollment[];
   quizzes?: Quiz[];
@@ -174,4 +175,30 @@ export interface QuizFormData {
   passing_score: number;
   course: string;
   questions: QuizQuestion[];
+}
+
+export interface Progress {
+  id: number;
+  documentId: string;
+  student?: {
+    id: number;
+    documentId?: string;
+    username: string;
+    email: string;
+    full_name?: string;
+    avatar_url?: string;
+  };
+  course?: {
+    id: number;
+    documentId?: string;
+    title: string;
+  };
+  lesson?: {
+    id: number;
+    documentId?: string;
+    title: string;
+    order?: number;
+  };
+  completed_at?: string;
+  createdAt?: string;
 }

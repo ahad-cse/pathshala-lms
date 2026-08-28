@@ -17,6 +17,7 @@ export default function QuizStudioPage() {
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>('all');
 
   // Form State
   const [formData, setFormData] = useState<QuizFormData>({
@@ -298,7 +299,7 @@ export default function QuizStudioPage() {
                 textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>📝</div>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}></div>
               <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 6px' }}>
                 No quizzes authored yet
               </h3>
@@ -322,8 +323,15 @@ export default function QuizStudioPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
-              {quizzes.map((quiz) => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '20px' }}>
+              {quizzes
+                .filter((q) => {
+                  if (selectedCourseFilter === 'all') return true;
+                  const docId = q.course?.documentId || (typeof q.course === 'string' ? q.course : '');
+                  const numId = q.course?.id || (typeof q.course === 'number' ? q.course : null);
+                  return docId === selectedCourseFilter || (numId !== null && String(numId) === selectedCourseFilter);
+                })
+                .map((quiz) => {
                 const qCount = quiz.questions?.length || 0;
                 const matchedCourse = myCourses.find(
                   (c) =>
@@ -342,33 +350,50 @@ export default function QuizStudioPage() {
                       backgroundColor: 'var(--surface)',
                       borderRadius: '16px',
                       border: '1px solid var(--border)',
-                      padding: '20px 24px',
+                      padding: '20px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '12px',
+                      gap: '14px',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '80%' }}>
-                        <span
-                          style={{
-                            fontSize: '11.5px',
-                            fontWeight: 700,
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            backgroundColor: 'var(--role-instructor-soft)',
-                            color: 'var(--role-instructor)',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                          title={`Assigned Course: ${courseTitle}`}
-                        >
-                          📚 {courseTitle}
-                        </span>
+                    {/* Prominent Parent Course Header Banner */}
+                    <div
+                      style={{
+                        backgroundColor: 'var(--canvas)',
+                        border: '1px solid var(--border-soft)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                        <span style={{ fontSize: '16px', flexShrink: 0 }}></span>
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'none' }}>
+                            Course
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '12.5px',
+                              fontWeight: 700,
+                              color: 'var(--ink)',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={`Assigned Course: ${courseTitle}`}
+                          >
+                            {courseTitle}
+                          </div>
+                        </div>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {/* Action Buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                         <button
                           onClick={() => handleOpenEditModal(quiz)}
                           title="Edit Quiz"
@@ -376,7 +401,7 @@ export default function QuizStudioPage() {
                             width: '28px',
                             height: '28px',
                             borderRadius: '6px',
-                            backgroundColor: 'var(--canvas)',
+                            backgroundColor: 'var(--surface)',
                             border: '1px solid var(--border)',
                             color: 'var(--ink-soft)',
                             cursor: 'pointer',
@@ -415,31 +440,36 @@ export default function QuizStudioPage() {
                       </div>
                     </div>
 
-                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
-                      {quiz.title}
-                    </h3>
+                    {/* Quiz Title & Description */}
+                    <div>
+                      <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px', lineHeight: 1.3 }}>
+                        {quiz.title}
+                      </h3>
+                      <p style={{ fontSize: '12.5px', color: 'var(--ink-soft)', margin: 0, lineHeight: 1.4 }}>
+                        {quiz.description || 'Interactive MCQ assessment.'}
+                      </p>
+                    </div>
 
-                    <p style={{ fontSize: '13px', color: 'var(--ink-soft)', margin: 0, lineHeight: 1.4, flex: 1 }}>
-                      {quiz.description || 'Interactive MCQ assessment.'}
-                    </p>
-
+                    {/* Metrics Footer */}
                     <div
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         borderTop: '1px solid var(--border-soft)',
-                        paddingTop: '12px',
-                        fontSize: '12.5px',
+                        paddingTop: '10px',
+                        fontSize: '12px',
                         color: 'var(--ink-faint)',
+                        marginTop: 'auto',
                       }}
                     >
                       <span>{qCount} Questions</span>
-                      <span>Passing Score: <strong style={{ color: 'var(--ink)' }}>{quiz.passing_score}%</strong></span>
+                      <span>Pass: <strong style={{ color: 'var(--ink)' }}>{quiz.passing_score}%</strong></span>
                     </div>
 
+                    {/* Open / Preview Quiz Button */}
                     <Link
-                      href={`/courses/${courseDocId || quiz.course?.documentId || 'c'}/quiz/${quiz.documentId}`}
+                      href={`/courses/${courseDocId || quiz.course?.documentId || 'c'}/quizzes/${quiz.documentId}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -451,11 +481,11 @@ export default function QuizStudioPage() {
                         border: '1px solid var(--border)',
                         color: 'var(--ink)',
                         fontSize: '12.5px',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         textDecoration: 'none',
                       }}
                     >
-                      <span>Preview Quiz Experience →</span>
+                      <span>Open Quiz Assessment →</span>
                     </Link>
                   </div>
                 );

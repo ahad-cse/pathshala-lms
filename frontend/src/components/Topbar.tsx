@@ -329,21 +329,8 @@ export default function Topbar() {
                 </div>
               )}
 
-              <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ink)', paddingRight: '4px' }}>
                 {user.full_name || user.username}
-              </span>
-
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  padding: '1px 6px',
-                  borderRadius: '99px',
-                  backgroundColor: roleConfig.softColor,
-                  color: roleConfig.color,
-                }}
-              >
-                {roleConfig.label}
               </span>
             </div>
           )}

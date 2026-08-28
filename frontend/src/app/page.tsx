@@ -14,6 +14,7 @@ export default function HomePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [visibleCourseCount, setVisibleCourseCount] = useState(6);
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const [visiblePostCount, setVisiblePostCount] = useState(6);
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
@@ -74,6 +75,8 @@ export default function HomePage() {
         }
       } catch (err) {
         console.error('Failed to load homepage data:', err);
+      } finally {
+        setLoading(false);
       }
     }
     loadData();

@@ -1,5 +1,7 @@
 'use client';
 
+import LoadingSpinner from '@/components/LoadingSpinner';
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { enrollmentApi, progressApi, quizSubmissionApi, courseApi } from '@/lib/api';
 import { Enrollment, Progress, QuizSubmission, Course } from '@/types/content';
@@ -389,8 +391,8 @@ export default function StudentProgressTable({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: 'var(--ink-soft)' }}>
-                  Loading student progress records...
+                <td colSpan={5} style={{ padding: '32px', textAlign: 'center' }}>
+                  <LoadingSpinner message="Loading student evaluations & progress records..." minHeight="140px" size={28} />
                 </td>
               </tr>
             ) : filteredRecords.length === 0 ? (

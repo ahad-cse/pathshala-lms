@@ -15,7 +15,7 @@
 | **Backend REST API** | Railway | [https://pathshala-lms-production.up.railway.app](https://pathshala-lms-production.up.railway.app) | Strapi Headless API Gateway |
 | **Interactive API Docs** | Swagger | [https://pathshala-lms-production.up.railway.app/documentation/v1.0.0](https://pathshala-lms-production.up.railway.app/documentation/v1.0.0) | OpenAPI Interactive Swagger UI |
 | **CMS Admin Console** | Railway | [https://pathshala-lms-production.up.railway.app/admin](https://pathshala-lms-production.up.railway.app/admin) | Strapi Database & Content Studio |
-| **Video Walkthrough** | Google Drive | [Watch Video Walkthrough](#) | Comprehensive technical walkthrough |
+| **Video Walkthrough** | Youtube | [Watch Video Walkthrough](https://youtu.be/6j_t4gtdHK8) | Comprehensive technical walkthrough |
 
 ---
 
